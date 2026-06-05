@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { FileSpreadsheet, X, Send } from 'lucide-react'
 
-const TOTAL_STEPS = 3
+const TOTAL_STEPS = 4
 const GAS_URL = import.meta.env.VITE_GAS_URL || ''
 
 async function postToGAS(payload) {
@@ -33,28 +33,33 @@ async function postToGAS(payload) {
   }
 }
 
-export default function Questionnaire({ onSubmit, onClose, inputs, results, scenarioName, prefillEmail = '' }) {
+export default function Questionnaire({ onSubmit, onClose, inputs, results, scenarioName }) {
   const [step,   setStep]   = useState(1)
   const [status, setStatus] = useState('idle') // idle | sending | success | error
   const [errMsg, setErrMsg] = useState('')
+  const [emailError, setEmailError] = useState('')
   const [answers, setAnswers] = useState({
-    experience: '', hasBusiness: '', rating: 0, reason: '',
+    email: '', experience: '', hasBusiness: '', rating: 0, reason: '',
   })
 
   function canNext() {
-    if (step === 1) return answers.experience !== ''
-    if (step === 2) return answers.hasBusiness !== ''
-    if (step === 3) return answers.rating > 0 && answers.reason.trim().length > 0
+    if (step === 1) return answers.email.includes('@') && answers.email.includes('.')
+    if (step === 2) return answers.experience !== ''
+    if (step === 3) return answers.hasBusiness !== ''
+    if (step === 4) return answers.rating > 0 && answers.reason.trim().length > 0
     return false
   }
 
   async function handleNext() {
+    if (step === 1 && (!answers.email.includes('@') || !answers.email.includes('.'))) {
+      setEmailError('กรุณากรอก email ที่ถูกต้อง'); return
+    }
     if (step < TOTAL_STEPS) { setStep(s => s + 1); return }
 
     setStatus('sending')
 
     const payload = {
-      email:       prefillEmail,
+      email:       answers.email,
       experience:  answers.experience,
       hasBusiness: answers.hasBusiness,
       rating:      answers.rating,
@@ -96,9 +101,8 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
           <div style={{ fontSize: '3rem', marginBottom: 16 }}>✅</div>
           <h2 className="modal-title">Report ส่งแล้ว!</h2>
           <p className="modal-desc">
-            {prefillEmail
-              ? <>รายงาน Cash Flow ส่งไปที่ <strong>{prefillEmail}</strong> แล้ว<br />ตรวจสอบ inbox (อาจอยู่ใน Spam)</>
-              : 'รายงาน Cash Flow ถูกบันทึกเรียบร้อยแล้ว'}
+            รายงาน Cash Flow ส่งไปที่ <strong>{answers.email}</strong> แล้ว<br />
+            ตรวจสอบ inbox (อาจอยู่ใน Spam)
           </p>
           <button className="btn btn-ink btn-full btn-lg" onClick={onClose}>ปิด</button>
         </div>
@@ -130,9 +134,7 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
         <div className="modal" style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '3rem', marginBottom: 16 }}>⏳</div>
           <h2 className="modal-title">กำลังส่ง Report…</h2>
-          <p className="modal-desc">
-            {prefillEmail ? `บันทึกข้อมูลและส่ง email ไปที่ ${prefillEmail}` : 'กำลังบันทึกข้อมูล…'}
-          </p>
+          <p className="modal-desc">บันทึกข้อมูลและส่ง email ไปที่ {answers.email}</p>
         </div>
       </div>
     )
@@ -160,9 +162,26 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
         </div>
         <div style={{ fontSize: '0.7rem', color: 'var(--ink-4)', marginBottom: 4 }}>Step {step} / {TOTAL_STEPS}</div>
 
-        {/* Step 1 — Experience */}
+        {/* Step 1 — Email */}
         {step === 1 && <>
-          <h2 className="modal-title">ก่อนรับ Report</h2>
+          <h2 className="modal-title">รับ Excel Report</h2>
+          <p className="modal-desc">กรอก email เพื่อรับไฟล์ Cash Flow สรุปผลการจำลอง</p>
+          <div className="privacy-notice">
+            🔒 <strong>Privacy:</strong> By submitting, you agree that your simulation inputs and
+            email may be saved for research and product improvement. We do not sell your data.
+          </div>
+          <div className="input-group">
+            <label style={{ fontSize: '0.82rem', fontWeight: 500, display: 'block', marginBottom: 6 }}>Email Address</label>
+            <input type="email" className={`field ${emailError ? 'above-avg' : ''}`}
+              placeholder="your@email.com" value={answers.email} autoFocus
+              onChange={e => { setAnswers(a => ({ ...a, email: e.target.value })); setEmailError('') }} />
+            {emailError && <div className="input-hint above-avg">{emailError}</div>}
+          </div>
+        </>}
+
+        {/* Step 2 — Experience */}
+        {step === 2 && <>
+          <h2 className="modal-title">ประสบการณ์ในวงการ</h2>
           <p className="modal-desc">คุณทำงานในสายออกแบบ / สถาปัตย์มานานเท่าไร?</p>
           {['ยังไม่มีประสบการณ์','1–3 ปี','3–7 ปี','7–15 ปี','15 ปีขึ้นไป'].map(opt => (
             <button key={opt} className={`btn ${answers.experience === opt ? 'btn-ink' : 'btn-ghost'}`}
@@ -173,8 +192,8 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
           ))}
         </>}
 
-        {/* Step 2 — Business status */}
-        {step === 2 && <>
+        {/* Step 3 — Business status */}
+        {step === 3 && <>
           <h2 className="modal-title">สถานะธุรกิจ</h2>
           <p className="modal-desc">ตอนนี้คุณอยู่ในสถานการณ์ไหน?</p>
           {[
@@ -192,8 +211,8 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
           ))}
         </>}
 
-        {/* Step 3 — Rating */}
-        {step === 3 && <>
+        {/* Step 4 — Rating */}
+        {step === 4 && <>
           <h2 className="modal-title">ให้คะแนน App นี้</h2>
           <p className="modal-desc">ช่วย feedback สั้นๆ เพื่อพัฒนาต่อ</p>
           <div className="star-rating">

@@ -4,12 +4,10 @@ import Header from '../components/Header'
 import InputPanel from '../components/InputPanel'
 import OutputPanel from '../components/OutputPanel'
 import Questionnaire from '../components/Questionnaire'
-import EmailGate from '../components/EmailGate'
 import { DEFAULT_INPUTS } from '../data/defaults'
 import { calculateCashFlow } from '../utils/calculations'
 
 export default function SimulatorPage({ savedScenarios, onSaveScenario, onUpdateScenario, initialInputs, editingIdx }) {
-  const [userEmail, setUserEmail]   = useState(null)   // null = not entered yet
   const [showQuestionnaire, setShowQuestionnaire] = useState(false)
   const [mobileTab, setMobileTab]   = useState('input')
   const [inputs, setInputs]         = useState(() => initialInputs ? { ...DEFAULT_INPUTS, ...initialInputs } : DEFAULT_INPUTS)
@@ -51,16 +49,6 @@ export default function SimulatorPage({ savedScenarios, onSaveScenario, onUpdate
     setShowQuestionnaire(false)
   }
 
-  // Show email gate before simulator (skip if coming back from edit)
-  if (!userEmail && editingIdx == null) {
-    return (
-      <EmailGate
-        onSubmit={(email) => setUserEmail(email)}
-        onSkip={() => setUserEmail('anonymous')}
-      />
-    )
-  }
-
   return (
     <div className="page-wrap">
       <Header scenarioName={scenarioName} onNameChange={setScenarioName} />
@@ -79,7 +67,6 @@ export default function SimulatorPage({ savedScenarios, onSaveScenario, onUpdate
           inputs={inputs}
           results={results}
           scenarioName={scenarioName}
-          prefillEmail={userEmail !== 'anonymous' ? userEmail : ''}
         />
       )}
 
