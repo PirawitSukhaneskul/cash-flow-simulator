@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Plus, Minus, Trash2, PlusCircle, Check, X, Save } from 'lucide-react'
 import { STAFF_ROLES, TEAM_PACKS, OFFICE_DEFAULTS, MILESTONE_PRESETS, buildDefaultMilestones } from '../data/defaults'
-import { SOFTWARE_CATALOG, SOFTWARE_PACK_DEFAULTS, calcSelectedSoftwareCost } from '../data/softwareCatalog'
+import { SOFTWARE_CATALOG, SOFTWARE_CATEGORY_ORDER, SOFTWARE_PACK_DEFAULTS, calcSelectedSoftwareCost } from '../data/softwareCatalog'
 import { ASA_PROJECT_TYPES, PROJECT_SIZE_PRESETS, getASAGuidelineFee } from '../data/asa'
 import { fmtFull, fmt } from '../utils/calculations'
 
@@ -558,71 +558,80 @@ function SoftwareTab({ inputs, update }) {
         Prices are editable defaults. Verify at vendor websites.
       </div>
 
-      <div className="software-grid">
-        {SOFTWARE_CATALOG.map(sw => {
-          const sel   = selected.find(s => s.id === sw.id)
-          const isSel = !!sel
-          const price = sel?.pricePerUserMonth ?? sw.pricePerUserMonth
-          const users = sel?.users ?? 1
-          const annual = price * users * 12
+      {SOFTWARE_CATEGORY_ORDER.map(cat => {
+        const items = SOFTWARE_CATALOG.filter(sw => sw.category === cat)
+        if (items.length === 0) return null
+        return (
+          <div key={cat} className="software-cat-group">
+            <div className="software-cat-header">{cat}</div>
+            <div className="software-grid">
+              {items.map(sw => {
+                const sel   = selected.find(s => s.id === sw.id)
+                const isSel = !!sel
+                const price = sel?.pricePerUserMonth ?? sw.pricePerUserMonth
+                const users = sel?.users ?? 1
+                const annual = price * users * 12
 
-          return (
-            <div key={sw.id} className={`software-card ${isSel ? 'selected' : ''}`} onClick={() => toggleSoftware(sw.id)}>
-              <div className="software-card-header">
-                {sw.logo
-                  ? <img src={sw.logo} alt={sw.name} className="software-logo" />
-                  : <div className="software-emoji-logo">{sw.emoji}</div>
-                }
-                <div className="software-info">
-                  <div className="software-name">{sw.name}</div>
-                  <div className="software-cat">{sw.category}</div>
-                </div>
-              </div>
-
-              {isSel && (
-                <div onClick={e => e.stopPropagation()} style={{ marginTop: 4 }}>
-                  <div className="software-price-row">
-                    <div className="software-users">
-                      <button className="stepper-btn" style={{ width: 22, height: 22 }}
-                        onClick={e => { e.stopPropagation(); updateUsers(sw.id, Math.max(1, users - 1)) }}>
-                        <Minus size={10} />
-                      </button>
-                      <span style={{ fontSize: '0.78rem', fontWeight: 600, minWidth: 18, textAlign: 'center' }}>{users}</span>
-                      <button className="stepper-btn" style={{ width: 22, height: 22 }}
-                        onClick={e => { e.stopPropagation(); updateUsers(sw.id, users + 1) }}>
-                        <Plus size={10} />
-                      </button>
+                return (
+                  <div key={sw.id} className={`software-card ${isSel ? 'selected' : ''}`} onClick={() => toggleSoftware(sw.id)}>
+                    <div className="software-card-header">
+                      {sw.logo
+                        ? <img src={sw.logo} alt={sw.name} className="software-logo" />
+                        : <div className="software-emoji-logo">{sw.emoji}</div>
+                      }
+                      <div className="software-info">
+                        <div className="software-name">{sw.name}</div>
+                        <div className="software-cat">{sw.category}</div>
+                      </div>
                     </div>
-                    {price === 0
-                      ? <span className="software-free">FREE</span>
-                      : <input type="number" className="software-price-edit" value={price}
-                          onClick={e => e.stopPropagation()}
-                          onChange={e => updatePrice(sw.id, Number(e.target.value))}
-                          placeholder="฿/mo" />
-                    }
+
+                    {isSel && (
+                      <div onClick={e => e.stopPropagation()} style={{ marginTop: 4 }}>
+                        <div className="software-price-row">
+                          <div className="software-users">
+                            <button className="stepper-btn" style={{ width: 22, height: 22 }}
+                              onClick={e => { e.stopPropagation(); updateUsers(sw.id, Math.max(1, users - 1)) }}>
+                              <Minus size={10} />
+                            </button>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 600, minWidth: 18, textAlign: 'center' }}>{users}</span>
+                            <button className="stepper-btn" style={{ width: 22, height: 22 }}
+                              onClick={e => { e.stopPropagation(); updateUsers(sw.id, users + 1) }}>
+                              <Plus size={10} />
+                            </button>
+                          </div>
+                          {price === 0
+                            ? <span className="software-free">FREE</span>
+                            : <input type="number" className="software-price-edit" value={price}
+                                onClick={e => e.stopPropagation()}
+                                onChange={e => updatePrice(sw.id, Number(e.target.value))}
+                                placeholder="฿/mo" />
+                          }
+                        </div>
+                        {price > 0 && (
+                          <div style={{ fontSize: '0.68rem', color: 'var(--ink-4)', textAlign: 'right', marginTop: 3 }}>
+                            ฿{annual.toLocaleString()}/yr
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {!isSel && sw.pricePerUserMonth === 0 && (
+                      <div className="software-free" style={{ fontSize: '0.68rem' }}>FREE</div>
+                    )}
+                    {!isSel && sw.pricePerUserMonth > 0 && (
+                      <div style={{ fontSize: '0.68rem', color: 'var(--ink-4)' }}>
+                        ฿{sw.pricePerUserMonth.toLocaleString()}/user/mo
+                      </div>
+                    )}
+
+                    <div className="software-check"><Check size={10} /></div>
                   </div>
-                  {price > 0 && (
-                    <div style={{ fontSize: '0.68rem', color: 'var(--ink-4)', textAlign: 'right', marginTop: 3 }}>
-                      ฿{annual.toLocaleString()}/yr
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {!isSel && sw.pricePerUserMonth === 0 && (
-                <div className="software-free" style={{ fontSize: '0.68rem' }}>FREE</div>
-              )}
-              {!isSel && sw.pricePerUserMonth > 0 && (
-                <div style={{ fontSize: '0.68rem', color: 'var(--ink-4)' }}>
-                  ฿{sw.pricePerUserMonth.toLocaleString()}/user/mo
-                </div>
-              )}
-
-              <div className="software-check"><Check size={10} /></div>
+                )
+              })}
             </div>
-          )
-        })}
-      </div>
+          </div>
+        )
+      })}
 
       {/* Custom software */}
       <div className="section-title" style={{ marginTop: 12 }}>Custom Software</div>

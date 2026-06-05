@@ -33,7 +33,10 @@ export function calculateCashFlow(inputs) {
 
   for (const proj of projects) {
     const fee   = proj.constructionCost * (proj.feePercent / 100)
-    const delay = (proj.paymentDelay ?? globalDelay)
+    // Worst Case (global) delay stacks on top of any per-project payment delay,
+    // so toggling Worst Case mode always shifts income — even when each project
+    // has an explicit paymentDelay of 0.
+    const delay = (proj.paymentDelay || 0) + (globalDelay || 0)
 
     if (proj.milestones && proj.milestones.length > 0) {
       // Milestone-based payment schedule

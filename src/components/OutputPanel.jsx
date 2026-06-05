@@ -182,7 +182,9 @@ function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentD
     label: d.monthLabel + (d.year > 1 ? ` Y${d.year}` : ''),
   }))
 
-  const showVertexLabels = count <= 24
+  // Cleaner chart: keep a visible vertex on every month, but show the value
+  // numbers only on hover (via the tooltip) instead of labeling every point.
+  const showVertexLabels = false
   const barSize          = count > 18 ? 7 : count > 12 ? 10 : 16
 
   // Quarter boundary labels (start of Q2, Q3, Q4, Q5…)
@@ -226,12 +228,12 @@ function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentD
 
             {/* Quarter boundary stronger lines */}
             {qBoundaryXs.map(x => (
-              <ReferenceLine key={`qb_${x}`} x={x} stroke="var(--border-md)" strokeWidth={1.5} />
+              <ReferenceLine key={`qb_${x}`} yAxisId="line" x={x} stroke="var(--border-md)" strokeWidth={1.5} />
             ))}
 
             {/* Quarter labels at top */}
             {qLabels.map(({ x, q }) => (
-              <ReferenceLine key={`ql_${q}`} x={x} stroke="none"
+              <ReferenceLine key={`ql_${q}`} yAxisId="line" x={x} stroke="none"
                 label={{ value: q, position: 'top', fill:'#94a3b8', fontSize:9, fontWeight:700 }} />
             ))}
 
@@ -255,7 +257,7 @@ function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentD
               name="Balance"
               stroke="#1a56db"
               strokeWidth={2.5}
-              dot={(props) => <BalanceDot {...props} minSafeBalance={minSafeBalance} showLabel={showVertexLabels} />}
+              dot={(props) => { const { key, ...rest } = props; return <BalanceDot key={key} {...rest} minSafeBalance={minSafeBalance} showLabel={showVertexLabels} /> }}
               activeDot={{ r:5, fill:'#1a56db', stroke:'white', strokeWidth:2 }}
               connectNulls
             />

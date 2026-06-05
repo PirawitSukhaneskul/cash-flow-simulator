@@ -633,6 +633,20 @@ input[type="range"] {
   margin-bottom: 12px;
 }
 
+/* Category-grouped software selector */
+.software-cat-group { margin-bottom: 6px; }
+.software-cat-header {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-4);
+  margin: 10px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.software-cat-group .software-grid { margin-bottom: 4px; }
+
 .software-card {
   border: 1.5px solid var(--border);
   border-radius: var(--r-md);
