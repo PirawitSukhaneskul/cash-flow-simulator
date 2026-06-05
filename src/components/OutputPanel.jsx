@@ -1,0 +1,411 @@
+import {
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, ReferenceLine, ReferenceArea,
+  PieChart, Pie, Cell,
+} from 'recharts'
+import {
+  TrendingUp, Wallet, Users, Monitor, Receipt, BookMarked, Save,
+} from 'lucide-react'
+import { fmt, fmtFull } from '../utils/calculations'
+
+// ── Formatters ─────────────────────────────────────────────
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+// ── Tooltip ────────────────────────────────────────────────
+function CashTooltip({ active, payload, minSafeBalance }) {
+  if (!active || !payload?.length) return null
+  const d = payload[0]?.payload
+  if (!d) return null
+  return (
+    <div style={{ background:'white', border:'1px solid var(--border)', borderRadius:12, padding:'12px 16px', boxShadow:'var(--sh-md)', fontSize:'0.78rem', minWidth:210 }}>
+      <div style={{ fontWeight:700, marginBottom:8, color:'var(--ink-3)' }}>
+        {d.monthLabel}{d.year > 1 ? ` Y${d.year}` : ''}
+        {d.isRisky && <span style={{ color:'var(--red)', marginLeft:6, fontSize:'0.7rem' }}>⚠️ Risky</span>}
+      </div>
+      {[
+        { k:'Revenue',  v:d.revenue,  c:'#2563eb' },
+        { k:'Expenses', v:d.expenses, c:'#f87171' },
+        { k:'Net',      v:d.net,      c:d.net>=0?'var(--green)':'var(--red)' },
+        { k:'Balance',  v:d.balance,  c:d.isRisky?'var(--red)':'var(--ink)' },
+      ].map(r => (
+        <div key={r.k} style={{ display:'flex', justifyContent:'space-between', gap:16, marginBottom:3 }}>
+          <span style={{ color:'var(--ink-3)', display:'flex', gap:5, alignItems:'center' }}>
+            <span style={{ width:7, height:7, borderRadius:'50%', background:r.c, display:'inline-block' }} />{r.k}
+          </span>
+          <span style={{ fontWeight:700, color:r.c }}>{fmtFull(r.v)}</span>
+        </div>
+      ))}
+      <div style={{ borderTop:'1px solid var(--border)', marginTop:6, paddingTop:6, display:'flex', justifyContent:'space-between', fontSize:'0.7rem' }}>
+        <span style={{ color:'var(--ink-4)' }}>Min Safe</span>
+        <span style={{ color:'var(--red)', fontWeight:600 }}>{fmtFull(minSafeBalance)}</span>
+      </div>
+    </div>
+  )
+}
+
+function PieTip({ active, payload }) {
+  if (!active || !payload?.length) return null
+  const d = payload[0]
+  return (
+    <div style={{ background:'white', border:'1px solid var(--border)', borderRadius:10, padding:'8px 12px', boxShadow:'var(--sh-sm)', fontSize:'0.78rem' }}>
+      <div style={{ fontWeight:600 }}>{d.name}</div>
+      <div style={{ color:'var(--ink-3)' }}>{fmtFull(d.value)}</div>
+    </div>
+  )
+}
+
+// ── Balance Alert ──────────────────────────────────────────
+function BalanceAlert({ riskyCount, firstRisky }) {
+  if (riskyCount === 0) return (
+    <div className="balance-alert safe" style={{ marginBottom:12 }}>
+      <span className="balance-alert-icon">✅</span>
+      <div><div className="balance-alert-title">Cash balance is healthy</div>
+        <div className="balance-alert-desc">Balance stays above minimum safe level throughout</div></div>
+    </div>
+  )
+  if (riskyCount <= 2) return (
+    <div className="balance-alert warning" style={{ marginBottom:12 }}>
+      <span className="balance-alert-icon">⚠️</span>
+      <div><div className="balance-alert-title">
+        Risky in {firstRisky?.monthLabel}{firstRisky?.year > 1 ? ` Y${firstRisky.year}` : ''}
+      </div>
+        <div className="balance-alert-desc">{riskyCount} month(s) below min safe — consider credit line</div></div>
+    </div>
+  )
+  return (
+    <div className="balance-alert critical" style={{ marginBottom:12 }}>
+      <span className="balance-alert-icon">🔴</span>
+      <div><div className="balance-alert-title">Cash below minimum for {riskyCount} months</div>
+        <div className="balance-alert-desc">Increase capital, accelerate receivables, or cut fixed costs</div></div>
+    </div>
+  )
+}
+
+// ── KPI Row — 5 compact cards ──────────────────────────────
+function KPISection({ results, inputs }) {
+  const { annualRevenue, annualExpenses, annualNetProfit, annualSalary, annualSoftware } = results
+  const isProfit = annualNetProfit >= 0
+  const margin   = annualRevenue > 0 ? ((annualNetProfit / annualRevenue) * 100).toFixed(1) : null
+
+  return (
+    <div>
+      {/* Hero card */}
+      <div className="kpi-hero" style={{ marginBottom:12 }}>
+        <div>
+          <div className="kpi-hero-tag">Annual Net Profit (Year 1 est.)</div>
+          <div className={`kpi-hero-value ${isProfit ? 'profit' : 'loss'}`}>{fmtFull(annualNetProfit)}</div>
+          <div className="kpi-hero-sub">{isProfit ? '▲ กำไร' : '▼ ขาดทุน'} · after {inputs.taxRate}% tax</div>
+        </div>
+        <div style={{ textAlign:'right' }}>
+          <div className="kpi-hero-margin-label">Net Margin</div>
+          <div className={`kpi-hero-margin ${isProfit ? 'profit' : 'loss'}`}>{margin != null ? `${margin}%` : '—'}</div>
+        </div>
+      </div>
+
+      {/* 5 compact KPI cards in one row */}
+      <div className="kpi-compact-row">
+        {[
+          { icon: TrendingUp, label:'Revenue',     value: fmtFull(annualRevenue),   color:'var(--blue)',  accent:'accent-blue'  },
+          { icon: Wallet,     label:'Net Profit',  value: fmtFull(annualNetProfit), color: isProfit ? 'var(--green)' : 'var(--red)', accent: isProfit ? '' : 'accent-red' },
+          { icon: Users,      label:'Salary/yr',   value: fmtFull(annualSalary),    color:'var(--ink)',   accent:''             },
+          { icon: Monitor,    label:'Software/yr', value: fmtFull(annualSoftware),  color:'var(--ink)',   accent:''             },
+          { icon: Receipt,    label:'Expenses',    value: fmtFull(annualExpenses),  color:'var(--red)',   accent:'accent-red'   },
+        ].map(({ icon: Icon, label, value, color, accent }) => (
+          <div key={label} className={`kpi-compact-card ${accent}`}>
+            <div className="kpi-compact-icon">
+              <Icon size={14} color={color} />
+            </div>
+            <div className="kpi-tag">{label}</div>
+            <div className="kpi-value" style={{ color, fontSize:'1rem' }}>{value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Reality Check ──────────────────────────────────────────
+function RealityCheck({ results, inputs }) {
+  const { staffCostPct, breakEvenMonth, runway, riskyCount } = results
+  const totalRevenue = inputs.projects.reduce((s, p) => s + p.constructionCost * (p.feePercent / 100), 0)
+  const avgFee = totalRevenue || 1
+  const projectsNeeded = results.annualExpenses > 0
+    ? Math.ceil(results.annualExpenses / (avgFee / Math.max(inputs.projects.length, 1)))
+    : 0
+
+  return (
+    <div className="card">
+      <div className="card-title">Reality Check</div>
+      <div className="reality-grid">
+        {[
+          { icon:'👥', label:'Staff % of Expenses', value:`${staffCostPct}%`, desc: Number(staffCostPct)>60 ? '⚠️ เกิน 60%' : 'อยู่ในระดับที่ยอมรับได้', type: Number(staffCostPct)>60 ? 'danger' : 'safe' },
+          { icon:'📅', label:'Break-even',  value: breakEvenMonth ? `Month ${breakEvenMonth}` : 'ยังไม่ถึง',  desc: breakEvenMonth ? `Balance กลับมาเท่าทุน Month ${breakEvenMonth}` : 'เพิ่มโปรเจค หรือลดต้นทุน', type: !breakEvenMonth ? 'danger' : breakEvenMonth > 24 ? 'warning' : 'safe' },
+          { icon:'⚠️', label:'Cash Runway', value: runway ? `Month ${runway}` : 'ปลอดภัย', desc: runway ? `Cash ติดลบ Month ${runway}` : 'Balance ไม่ติดลบ', type: runway ? 'danger' : 'safe' },
+          { icon:'💧', label:'Risky Months',value: riskyCount > 0 ? `${riskyCount} mo` : 'None', desc: riskyCount > 0 ? `${riskyCount} เดือน balance ต่ำกว่า min safe` : 'Cash สูงกว่า min safe ตลอด', type: riskyCount > 2 ? 'danger' : riskyCount > 0 ? 'warning' : 'safe' },
+        ].map(c => (
+          <div key={c.label} className={`reality-card ${c.type}`}>
+            <div className="reality-icon">{c.icon}</div>
+            <div className="reality-label">{c.label}</div>
+            <div className="reality-value">{c.value}</div>
+            <div className="reality-desc">{c.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Custom dot renderer for balance line ───────────────────
+function BalanceDot(props) {
+  const { cx, cy, payload, minSafeBalance, showLabel } = props
+  if (!payload || cx == null || cy == null) return null
+  const risky = payload.balance < minSafeBalance
+  const color = risky ? '#e02020' : '#1a56db'
+  const r     = risky ? 4.5 : 3
+  return (
+    <g key={`dot_${payload.month}`}>
+      <circle cx={cx} cy={cy} r={r} fill={color} stroke="white" strokeWidth={1.5} />
+      {showLabel && (
+        <text x={cx} y={cy - 9} textAnchor="middle" fontSize={8} fill={color} fontWeight={700} dominantBaseline="auto">
+          {fmt(payload.balance)}
+        </text>
+      )}
+    </g>
+  )
+}
+
+// ── Combo Cash Flow Chart ──────────────────────────────────
+function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentDelay }) {
+  const count   = Math.min(months, 24)
+  const display = data.slice(0, count).map((d, i) => ({
+    ...d,
+    label: d.monthLabel + (d.year > 1 ? ` Y${d.year}` : ''),
+  }))
+
+  const showVertexLabels = count <= 24
+  const barSize          = count > 18 ? 7 : count > 12 ? 10 : 16
+
+  // Quarter boundary labels (start of Q2, Q3, Q4, Q5…)
+  const qBoundaryXs = display.filter((_, i) => i > 0 && i % 3 === 0).map(d => d.label)
+
+  // Quarter labels: Q1 at index 0, Q2 at index 3, etc.
+  const qLabels = display.filter((_, i) => i % 3 === 0).map((d, qi) => ({
+    x: d.label, q: `Q${qi + 1}`,
+  }))
+
+  const interval = count > 18 ? 2 : count > 12 ? 1 : 0
+
+  const riskyCount = display.filter(d => d.balance < minSafeBalance).length
+  const firstRisky = display.find(d => d.balance < minSafeBalance) || null
+
+  return (
+    <div className="chart-card" style={{ gridColumn: '1 / -1' }}>
+      <div className="chart-title">Cash Flow Projection</div>
+      <div className="chart-subtitle">
+        Revenue bars (blue) · Expenses (pink) · Balance line
+        {paymentDelay > 0 && <span style={{ color:'var(--amber)', fontWeight:600 }}> · ⚡ +{paymentDelay}mo payment delay</span>}
+      </div>
+
+      <BalanceAlert riskyCount={riskyCount} firstRisky={firstRisky} />
+
+      <div style={{ height: 290 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={display} margin={{ top: 24, right: 60, bottom: 0, left: 10 }} barGap={2}>
+
+            {/* Grid — light verticals every month, stronger at quarters */}
+            <CartesianGrid strokeDasharray="0" vertical={true} stroke="var(--border)" strokeOpacity={0.6} horizontal={true} />
+
+            <XAxis dataKey="label" tick={{ fontSize:10, fill:'var(--ink-4)' }} axisLine={false} tickLine={false} interval={interval} />
+
+            {/* Left Y: bars */}
+            <YAxis yAxisId="bars" tickFormatter={v => fmt(v)} tick={{ fontSize:10, fill:'var(--ink-4)' }} axisLine={false} tickLine={false} width={50} />
+            {/* Right Y: balance */}
+            <YAxis yAxisId="line" orientation="right" tickFormatter={v => fmt(v)} tick={{ fontSize:10, fill:'var(--ink-4)' }} axisLine={false} tickLine={false} width={54} />
+
+            <Tooltip content={<CashTooltip minSafeBalance={minSafeBalance} />} />
+
+            {/* Quarter boundary stronger lines */}
+            {qBoundaryXs.map(x => (
+              <ReferenceLine key={`qb_${x}`} x={x} stroke="var(--border-md)" strokeWidth={1.5} />
+            ))}
+
+            {/* Quarter labels at top */}
+            {qLabels.map(({ x, q }) => (
+              <ReferenceLine key={`ql_${q}`} x={x} stroke="none"
+                label={{ value: q, position: 'top', fill:'#94a3b8', fontSize:9, fontWeight:700 }} />
+            ))}
+
+            {/* Danger zone shading below min safe balance */}
+            <ReferenceArea yAxisId="line" y1={0} y2={minSafeBalance} fill="#fef2f2" fillOpacity={0.45} stroke="none" />
+
+            {/* Dashed red min safe line */}
+            <ReferenceLine yAxisId="line" y={minSafeBalance}
+              stroke="#e02020" strokeDasharray="5 3" strokeWidth={1.5}
+              label={{ value:`Min ฿${(minSafeBalance/1000).toFixed(0)}K`, position:'insideTopRight', fontSize:9, fill:'#e02020', fontWeight:600 }} />
+
+            {/* Revenue bars */}
+            <Bar yAxisId="bars" dataKey="revenue"  name="Revenue"  fill="#2563eb" radius={[3,3,0,0]} barSize={barSize} />
+            {/* Expense bars */}
+            <Bar yAxisId="bars" dataKey="expenses" name="Expenses" fill="#fca5a5" radius={[3,3,0,0]} barSize={barSize} />
+
+            {/* Balance line — single line, custom colored dots */}
+            <Line
+              yAxisId="line"
+              dataKey="balance"
+              name="Balance"
+              stroke="#1a56db"
+              strokeWidth={2.5}
+              dot={(props) => <BalanceDot {...props} minSafeBalance={minSafeBalance} showLabel={showVertexLabels} />}
+              activeDot={{ r:5, fill:'#1a56db', stroke:'white', strokeWidth:2 }}
+              connectNulls
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="chart-legend" style={{ marginTop:10 }}>
+        <div className="legend-item"><div className="legend-dot" style={{ background:'#2563eb' }}/><span>Revenue</span></div>
+        <div className="legend-item"><div className="legend-dot" style={{ background:'#fca5a5' }}/><span>Expenses</span></div>
+        <div className="legend-item"><div className="legend-dot" style={{ background:'#1a56db' }}/><span>Balance (safe)</span></div>
+        <div className="legend-item"><div className="legend-dot" style={{ background:'#e02020' }}/><span>Balance (risky)</span></div>
+        <div className="legend-item"><div className="legend-dash" /><span>Min safe ({fmtFull(minSafeBalance)})</span></div>
+      </div>
+    </div>
+  )
+}
+
+// ── Expense Donut ──────────────────────────────────────────
+function ExpenseDonut({ data, annualExpenses }) {
+  const withPct = data.map(d => ({ ...d, percent: annualExpenses > 0 ? ((d.value / annualExpenses)*100).toFixed(1) : '0' }))
+  return (
+    <div className="chart-card">
+      <div className="chart-title">Expense Breakdown</div>
+      <div className="chart-subtitle">Annual: {fmtFull(annualExpenses)}</div>
+      <div style={{ height:180 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={withPct} cx="50%" cy="50%" innerRadius={50} outerRadius={78} paddingAngle={3} dataKey="value">
+              {withPct.map((e,i) => <Cell key={i} fill={e.color} />)}
+            </Pie>
+            <Tooltip content={<PieTip />} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="chart-legend" style={{ justifyContent:'center', flexWrap:'wrap' }}>
+        {withPct.map(d => (
+          <div key={d.name} className="legend-item">
+            <div className="legend-dot" style={{ background:d.color }} />
+            <span>{d.name}</span>
+            <span style={{ color:'var(--ink-4)' }}>{d.percent}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Scenario Summary ───────────────────────────────────────
+function ScenarioSummary({ inputs, results }) {
+  return (
+    <div className="chart-card">
+      <div className="chart-title">Scenario Summary</div>
+      <div className="chart-subtitle">Key assumptions</div>
+      {[
+        { label:'Projects',      value:`${inputs.projects.length} projects` },
+        { label:'Revenue est.',  value:fmtFull(results.annualRevenue) },
+        { label:'Team Size',     value:`${inputs.team.reduce((s,r)=>s+r.count,0)} คน` },
+        { label:'Monthly Fixed', value:fmtFull(results.monthlyFixed) },
+        { label:'Initial Capital',value:fmtFull(inputs.initialCapital) },
+        { label:'Min Safe Bal.', value:fmtFull(results.minSafeBalance) },
+      ].map(({ label, value }) => (
+        <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:7, fontSize:'0.82rem' }}>
+          <span style={{ color:'var(--ink-3)' }}>{label}</span>
+          <span style={{ fontWeight:600 }}>{value}</span>
+        </div>
+      ))}
+      {inputs.paymentDelay > 0 && (
+        <div style={{ marginTop:8, padding:'6px 10px', background:'var(--amber-light)', borderRadius:8, fontSize:'0.75rem', color:'var(--amber)', fontWeight:600 }}>
+          ⚡ Worst Case: +{inputs.paymentDelay}mo payment delay active
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Monthly Table ──────────────────────────────────────────
+function MonthlyTable({ data, months }) {
+  return (
+    <div className="card">
+      <div className="card-title" style={{ marginBottom:14 }}>Monthly Cash Flow Table</div>
+      <div className="monthly-table-wrap">
+        <table className="monthly-table">
+          <thead>
+            <tr>
+              <th>Month</th><th>Revenue</th><th>Expenses</th><th>Net</th><th>Balance</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.slice(0, months).map(row => (
+              <tr key={row.month} className={row.isRisky ? 'risky-row' : ''}>
+                <td>{row.monthLabel}{row.year > 1 ? ` Y${row.year}` : ''}</td>
+                <td className={row.revenue > 0 ? 'cell-positive' : ''}>{fmtFull(row.revenue)}</td>
+                <td style={{ color:'var(--red)' }}>{fmtFull(row.expenses)}</td>
+                <td className={row.net >= 0 ? 'cell-positive' : 'cell-negative'}>{fmtFull(row.net)}</td>
+                <td className={row.balance >= 0 ? (row.isRisky ? 'cell-negative' : 'cell-positive') : 'cell-negative'}>{fmtFull(row.balance)}</td>
+                <td style={{ fontSize:'0.7rem' }}>{row.isRisky ? <span style={{ color:'var(--red)', fontWeight:600 }}>⚠️ Risky</span> : <span style={{ color:'var(--green)' }}>✓</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ── Main OutputPanel ───────────────────────────────────────
+export default function OutputPanel({ inputs, results, onGetReport, onSaveScenario }) {
+  return (
+    <div className="output-panel">
+      <KPISection results={results} inputs={inputs} />
+      <RealityCheck results={results} inputs={inputs} />
+      <ComboCashChart
+        data={results.monthlyData}
+        months={inputs.months}
+        minSafeBalance={results.minSafeBalance}
+        initialCapital={inputs.initialCapital}
+        paymentDelay={inputs.paymentDelay}
+      />
+      <div className="charts-grid">
+        <ExpenseDonut data={results.expenseBreakdown} annualExpenses={results.annualExpenses} />
+        <ScenarioSummary inputs={inputs} results={results} />
+      </div>
+      <MonthlyTable data={results.monthlyData} months={inputs.months} />
+
+      {/* Desktop download banner */}
+      <div className="download-banner desktop-only">
+        <div>
+          <h3>ดาวน์โหลด Excel Report</h3>
+          <p>Cash flow + KPIs + project breakdown — sent to email</p>
+        </div>
+        <div style={{ display:'flex', gap:8 }}>
+          <button className="btn btn-ghost btn-lg" style={{ borderRadius:'var(--r-md)', color:'white', borderColor:'rgba(255,255,255,0.3)' }} onClick={onSaveScenario}>
+            💾 Save Scenario
+          </button>
+          <button className="btn btn-blue btn-lg" onClick={onGetReport}>
+            📥 Get Report
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile sticky action bar */}
+      <div className="mobile-action-bar mobile-only">
+        <button className="btn btn-ghost btn-lg" style={{ flex:1, justifyContent:'center' }} onClick={onSaveScenario}>
+          💾 Save Scenario
+        </button>
+        <button className="btn btn-blue btn-lg" style={{ flex:1, justifyContent:'center' }} onClick={onGetReport}>
+          📥 Get Report
+        </button>
+      </div>
+    </div>
+  )
+}
