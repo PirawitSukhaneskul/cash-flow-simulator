@@ -6,6 +6,30 @@ import { ASA_PROJECT_TYPES, PROJECT_SIZE_PRESETS, getASAGuidelineFee } from '../
 import { fmtFull, fmt } from '../utils/calculations'
 
 // ── Helpers ────────────────────────────────────────────────
+// Comma-grouped currency input. Native <input type="number"> can't render
+// thousands separators, so we use a text input that displays "25,000,000"
+// and parses back to a plain integer on change.
+function MoneyInput({ value, onChange, className = 'field', style, placeholder, ...rest }) {
+  const display = (value === '' || value == null || isNaN(value))
+    ? ''
+    : Number(value).toLocaleString('en-US')
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      className={className}
+      style={style}
+      placeholder={placeholder}
+      value={display}
+      onChange={e => {
+        const digits = e.target.value.replace(/[^\d]/g, '')
+        onChange(digits === '' ? 0 : Number(digits))
+      }}
+      {...rest}
+    />
+  )
+}
+
 function Stepper({ value, onChange, min = 0, max = 99 }) {
   return (
     <div className="stepper-row">
@@ -28,8 +52,7 @@ function AvgField({ label, avg, value, onChange, suffix = '/mo' }) {
         <span className="input-label-text">{label}</span>
         <span className="input-avg-label">AVG ฿{avg.toLocaleString()}{suffix}</span>
       </div>
-      <input type="number" className={`field ${cls}`} value={value} min={0}
-        onChange={e => onChange(Number(e.target.value))} />
+      <MoneyInput className={`field ${cls}`} value={value} onChange={onChange} />
       {hint && <div className={`input-hint ${cls}`}>{hint}</div>}
     </div>
   )
@@ -222,8 +245,7 @@ function AddProjectModal({ onAdd, onClose }) {
             <span className="input-label-text">Construction Cost (THB)</span>
             <span className="input-avg-label">{fmt(cost)}</span>
           </div>
-          <input type="number" className="field" value={cost} min={0} step={1_000_000}
-            onChange={e => changeCost(Number(e.target.value))} />
+          <MoneyInput className="field" value={cost} onChange={changeCost} />
           <input type="range" min={1_000_000} max={500_000_000} step={1_000_000} value={cost}
             onChange={e => changeCost(Number(e.target.value))} style={{ marginTop: 8 }} />
           <div className="slider-labels">
@@ -362,8 +384,8 @@ function TeamTab({ inputs, update }) {
             <div className="team-row-info">
               <div className="team-row-name">{m.role}</div>
               <div className="team-salary-row">
-                <input type="number" className={`team-salary-field ${cls}`} value={m.salary}
-                  onChange={e => updateSalary(idx, Number(e.target.value))} />
+                <MoneyInput className={`team-salary-field ${cls}`} value={m.salary}
+                  onChange={v => updateSalary(idx, v)} />
                 <span className="team-salary-avg">AVG ฿{avg.toLocaleString()}</span>
               </div>
             </div>
@@ -601,9 +623,9 @@ function SoftwareTab({ inputs, update }) {
                           </div>
                           {price === 0
                             ? <span className="software-free">FREE</span>
-                            : <input type="number" className="software-price-edit" value={price}
+                            : <MoneyInput className="software-price-edit" value={price}
                                 onClick={e => e.stopPropagation()}
-                                onChange={e => updatePrice(sw.id, Number(e.target.value))}
+                                onChange={v => updatePrice(sw.id, v)}
                                 placeholder="฿/mo" />
                           }
                         </div>
@@ -638,8 +660,8 @@ function SoftwareTab({ inputs, update }) {
       {selected.filter(s => s.isCustom).map(s => (
         <div key={s.id} className="custom-sw-row">
           <input value={s.name || s.id} readOnly style={{ flex: 2 }} />
-          <input type="number" value={s.pricePerUserMonth} style={{ flex: 1 }}
-            onChange={e => updatePrice(s.id, Number(e.target.value))} placeholder="฿/mo" />
+          <MoneyInput value={s.pricePerUserMonth} style={{ flex: 1 }}
+            onChange={v => updatePrice(s.id, v)} placeholder="฿/mo" />
           <button className="btn-icon btn-sm" onClick={() => update({ selectedSoftware: selected.filter(x => x.id !== s.id) })}>
             <X size={12} />
           </button>
@@ -648,8 +670,8 @@ function SoftwareTab({ inputs, update }) {
       <div className="custom-sw-row" style={{ marginTop: 4 }}>
         <input placeholder="Software name" value={newSw.name}
           onChange={e => setNewSw(n => ({ ...n, name: e.target.value }))} style={{ flex: 2 }} />
-        <input type="number" placeholder="฿/mo" value={newSw.pricePerUserMonth}
-          onChange={e => setNewSw(n => ({ ...n, pricePerUserMonth: e.target.value }))} style={{ flex: 1 }} />
+        <MoneyInput placeholder="฿/mo" value={newSw.pricePerUserMonth === '' ? '' : newSw.pricePerUserMonth}
+          onChange={v => setNewSw(n => ({ ...n, pricePerUserMonth: v }))} style={{ flex: 1 }} />
         <button className="stepper-btn" onClick={addCustom}><Plus size={14} /></button>
       </div>
 
@@ -748,10 +770,10 @@ function WorstCaseSection({ inputs, update, results }) {
               </div>
             </div>
             {inputs.useCustomMinBalance && (
-              <input type="number" className="field" style={{ marginTop: 8 }}
+              <MoneyInput className="field" style={{ marginTop: 8 }}
                 value={inputs.minSafeBalanceCustom ?? results.autoMinBalance}
-                onChange={e => update({ minSafeBalanceCustom: Number(e.target.value) })}
-                placeholder={`e.g. ${results.autoMinBalance}`} />
+                onChange={v => update({ minSafeBalanceCustom: v })}
+                placeholder={`e.g. ${results.autoMinBalance.toLocaleString()}`} />
             )}
           </>
         )}
