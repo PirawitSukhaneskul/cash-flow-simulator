@@ -102,21 +102,18 @@ function KPISection({ results, inputs }) {
         </div>
       </div>
 
-      {/* 5 compact KPI cards in one row */}
-      <div className="kpi-compact-row">
+      {/* Annual Revenue + Annual Expenses on one horizontal line */}
+      <div className="kpi-pair-row">
         {[
-          { icon: TrendingUp, label:'Revenue',     value: fmtFull(annualRevenue),   color:'var(--blue)',  accent:'accent-blue'  },
-          { icon: Wallet,     label:'Net Profit',  value: fmtFull(annualNetProfit), color: isProfit ? 'var(--green)' : 'var(--red)', accent: isProfit ? '' : 'accent-red' },
-          { icon: Users,      label:'Salary/yr',   value: fmtFull(annualSalary),    color:'var(--ink)',   accent:''             },
-          { icon: Monitor,    label:'Software/yr', value: fmtFull(annualSoftware),  color:'var(--ink)',   accent:''             },
-          { icon: Receipt,    label:'Expenses',    value: fmtFull(annualExpenses),  color:'var(--red)',   accent:'accent-red'   },
+          { icon: TrendingUp, label:'Annual Revenue',  value: fmtFull(annualRevenue),  color:'var(--blue)', accent:'accent-blue' },
+          { icon: Receipt,    label:'Annual Expenses', value: fmtFull(annualExpenses), color:'var(--red)',  accent:'accent-red'  },
         ].map(({ icon: Icon, label, value, color, accent }) => (
           <div key={label} className={`kpi-compact-card ${accent}`}>
             <div className="kpi-compact-icon">
-              <Icon size={14} color={color} />
+              <Icon size={16} color={color} />
             </div>
             <div className="kpi-tag">{label}</div>
-            <div className="kpi-value" style={{ color, fontSize:'1rem' }}>{value}</div>
+            <div className="kpi-value" style={{ color, fontSize:'1.15rem' }}>{value}</div>
           </div>
         ))}
       </div>
@@ -124,25 +121,51 @@ function KPISection({ results, inputs }) {
   )
 }
 
-// ── Reality Check ──────────────────────────────────────────
+// ── Reality Check — 4 compact scan boxes ───────────────────
 function RealityCheck({ results, inputs }) {
-  const { staffCostPct, breakEvenMonth, runway, riskyCount } = results
-  const totalRevenue = inputs.projects.reduce((s, p) => s + p.constructionCost * (p.feePercent / 100), 0)
-  const avgFee = totalRevenue || 1
-  const projectsNeeded = results.annualExpenses > 0
-    ? Math.ceil(results.annualExpenses / (avgFee / Math.max(inputs.projects.length, 1)))
-    : 0
+  const { riskyCount, runway, staffCostPct } = results
+  const projects = inputs.projects || []
+  const avgFee   = projects.length ? projects.reduce((s, p) => s + p.feePercent, 0) / projects.length : 0
+  const avgGuide = projects.length ? projects.reduce((s, p) => s + p.guidelineFeePercent, 0) / projects.length : 0
+  const staffPct = Number(staffCostPct)
+  const delay    = inputs.paymentDelay || 0
+
+  const cashSafety = runway
+    ? { value: 'At risk',          desc: `Cash ติดลบ Month ${runway}`,   type: 'danger' }
+    : riskyCount === 0
+    ? { value: 'Safe',             desc: 'สูงกว่า min safe ตลอดช่วง',     type: 'safe' }
+    : riskyCount <= 2
+    ? { value: `${riskyCount} mo low`, desc: 'ต่ำกว่า min safe บางเดือน', type: 'warning' }
+    : { value: `${riskyCount} mo low`, desc: 'ต่ำกว่า min safe หลายเดือน', type: 'danger' }
+
+  const feeLevel = avgFee > avgGuide + 0.25
+    ? { value: 'Above guideline', desc: `${avgFee.toFixed(1)}% vs ASA ${avgGuide.toFixed(1)}%`, type: 'safe' }
+    : avgFee < avgGuide - 0.25
+    ? { value: 'Below guideline', desc: `${avgFee.toFixed(1)}% vs ASA ${avgGuide.toFixed(1)}%`, type: 'danger' }
+    : { value: 'On guideline',    desc: `${avgFee.toFixed(1)}% ≈ ASA ${avgGuide.toFixed(1)}%`, type: 'safe' }
+
+  const salaryLevel = staffPct > 60
+    ? { value: `${staffPct}% high`, desc: 'ค่าพนักงานสูงเกินเกณฑ์', type: 'danger' }
+    : staffPct < 30
+    ? { value: `${staffPct}% low`,  desc: 'ค่าพนักงานต่ำผิดปกติ',   type: 'warning' }
+    : { value: `${staffPct}% ok`,   desc: 'อยู่ในเกณฑ์ที่ดี',       type: 'safe' }
+
+  const delayRisk = delay === 0
+    ? { value: 'None',       desc: 'ลูกค้าจ่ายตรงเวลา',  type: 'safe' }
+    : { value: `+${delay} mo`, desc: 'Worst case จ่ายช้า', type: delay >= 2 ? 'danger' : 'warning' }
+
+  const boxes = [
+    { icon: '💧', label: 'Cash Safety',         ...cashSafety },
+    { icon: '📐', label: 'Fee Level',           ...feeLevel },
+    { icon: '👥', label: 'Salary Level',        ...salaryLevel },
+    { icon: '⏳', label: 'Payment Delay Risk',  ...delayRisk },
+  ]
 
   return (
     <div className="card">
       <div className="card-title">Reality Check</div>
       <div className="reality-grid">
-        {[
-          { icon:'👥', label:'Staff % of Expenses', value:`${staffCostPct}%`, desc: Number(staffCostPct)>60 ? '⚠️ เกิน 60%' : 'อยู่ในระดับที่ยอมรับได้', type: Number(staffCostPct)>60 ? 'danger' : 'safe' },
-          { icon:'📅', label:'Break-even',  value: breakEvenMonth ? `Month ${breakEvenMonth}` : 'ยังไม่ถึง',  desc: breakEvenMonth ? `Balance กลับมาเท่าทุน Month ${breakEvenMonth}` : 'เพิ่มโปรเจค หรือลดต้นทุน', type: !breakEvenMonth ? 'danger' : breakEvenMonth > 24 ? 'warning' : 'safe' },
-          { icon:'⚠️', label:'Cash Runway', value: runway ? `Month ${runway}` : 'ปลอดภัย', desc: runway ? `Cash ติดลบ Month ${runway}` : 'Balance ไม่ติดลบ', type: runway ? 'danger' : 'safe' },
-          { icon:'💧', label:'Risky Months',value: riskyCount > 0 ? `${riskyCount} mo` : 'None', desc: riskyCount > 0 ? `${riskyCount} เดือน balance ต่ำกว่า min safe` : 'Cash สูงกว่า min safe ตลอด', type: riskyCount > 2 ? 'danger' : riskyCount > 0 ? 'warning' : 'safe' },
-        ].map(c => (
+        {boxes.map(c => (
           <div key={c.label} className={`reality-card ${c.type}`}>
             <div className="reality-icon">{c.icon}</div>
             <div className="reality-label">{c.label}</div>
@@ -368,8 +391,7 @@ function MonthlyTable({ data, months }) {
 export default function OutputPanel({ inputs, results, onGetReport, onSaveScenario }) {
   return (
     <div className="output-panel">
-      <KPISection results={results} inputs={inputs} />
-      <RealityCheck results={results} inputs={inputs} />
+      {/* 1. Cash Flow Projection graph at the very top */}
       <ComboCashChart
         data={results.monthlyData}
         months={inputs.months}
@@ -377,6 +399,10 @@ export default function OutputPanel({ inputs, results, onGetReport, onSaveScenar
         initialCapital={inputs.initialCapital}
         paymentDelay={inputs.paymentDelay}
       />
+      {/* 2. Annual Net Profit hero + 3. Revenue & Expenses row */}
+      <KPISection results={results} inputs={inputs} />
+      {/* 4. Reality Check — 4 compact boxes */}
+      <RealityCheck results={results} inputs={inputs} />
       <div className="charts-grid">
         <ExpenseDonut data={results.expenseBreakdown} annualExpenses={results.annualExpenses} />
         <ScenarioSummary inputs={inputs} results={results} />

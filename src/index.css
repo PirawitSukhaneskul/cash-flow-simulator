@@ -341,14 +341,21 @@ body {
 /* ── Reality Check ───────────────────────────────────────── */
 .reality-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
 }
 
 .reality-card {
   border-radius: var(--r-md);
-  padding: 14px 16px;
+  padding: 10px 12px;
   border: 1px solid;
+}
+
+/* Annual Revenue + Expenses on one horizontal line */
+.kpi-pair-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 .reality-card.safe     { background: var(--green-light); border-color: #bbf7d0; }
 .reality-card.warning  { background: var(--amber-light); border-color: #fde68a; }
@@ -1196,7 +1203,7 @@ input[type="range"] {
   .output-panel { padding: 16px; }
 
   .kpi-grid          { grid-template-columns: 1fr; }
-  .reality-grid      { grid-template-columns: 1fr; }
+  .reality-grid      { grid-template-columns: 1fr 1fr; }
   .charts-grid       { grid-template-columns: 1fr; }
   .software-grid     { grid-template-columns: 1fr; }
   .size-preset-grid  { grid-template-columns: repeat(3, 1fr); }

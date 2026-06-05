@@ -16,10 +16,9 @@ export const SOFTWARE_CATALOG = [
   { id: 'rhino',       name: 'Rhinoceros 3D',       category: '3D',          logo: asset('software/rhino.png'),        pricePerUserMonth: 1458, description: 'Parametric 3D modeling' },
   // Scripting & Parametric
   { id: 'grasshopper', name: 'Grasshopper',         category: 'Parametric',  logo: asset('software/grasshopper.png'),  pricePerUserMonth: 0,    description: 'Visual scripting for Rhino (free with Rhino)' },
-  { id: 'dynamo',      name: 'Dynamo',              category: 'Parametric',  logo: asset('software/dynamo.png'),       pricePerUserMonth: 0,    description: 'Visual programming for Revit (free)' },
   { id: 'python',      name: 'Python',              category: 'Scripting',   logo: asset('software/python.png'),       pricePerUserMonth: 0,    description: 'Open-source scripting (free)' },
   // Rendering
-  { id: 'd5render',    name: 'D5 Render',           category: 'Rendering',   logo: asset('software/d5render.png'),     pricePerUserMonth: 1067, description: 'Real-time rendering engine' },
+  { id: 'd5render',    name: 'D5 Render',           category: 'Rendering',   logo: null, emoji: '🎬',            pricePerUserMonth: 1067, description: 'Real-time rendering engine' },
   { id: 'twinmotion',  name: 'Twinmotion',          category: 'Rendering',   logo: null, emoji: '🏞️',           pricePerUserMonth: 1417, description: 'Real-time arch visualization (Epic)' },
   { id: 'lumion',      name: 'Lumion Pro',          category: 'Rendering',   logo: null, emoji: '💡',            pricePerUserMonth: 3142, description: 'Architectural visualization' },
   { id: 'enscape',     name: 'Enscape',             category: 'Rendering',   logo: null, emoji: '🌿',            pricePerUserMonth: 2500, description: 'Real-time VR render plugin' },
@@ -27,9 +26,10 @@ export const SOFTWARE_CATALOG = [
   { id: 'adobe_cc',    name: 'Adobe Creative Cloud',category: 'Graphics',    logo: null, emoji: '🎨',            pricePerUserMonth: 1800, description: 'Photoshop, Illustrator, InDesign' },
   { id: 'ms365',       name: 'Microsoft 365',       category: 'Productivity',logo: null, emoji: '📊',            pricePerUserMonth: 400,  description: 'Office suite' },
   { id: 'claude',      name: 'Claude Pro',          category: 'AI',          logo: asset('software/claude.png'),       pricePerUserMonth: 590,  description: 'AI assistant for design & docs' },
+  { id: 'chatgpt',     name: 'ChatGPT Plus',        category: 'AI',          logo: null, emoji: '🤖',            pricePerUserMonth: 700,  description: 'OpenAI GPT assistant (Plus plan)' },
+  { id: 'gemini',      name: 'Gemini',              category: 'AI',          logo: null, emoji: '✨',            pricePerUserMonth: 700,  description: 'Google Gemini AI assistant' },
   // Collaboration
   { id: 'bim360',      name: 'BIM 360 / ACC',       category: 'BIM Cloud',   logo: null, emoji: '☁️',            pricePerUserMonth: 3000, description: 'Autodesk cloud collaboration' },
-  { id: 'speckle',     name: 'Speckle',             category: 'Collaboration',logo: asset('software/speckle.png'),     pricePerUserMonth: 0,    description: 'Open BIM data platform (free tier)' },
 ]
 
 // Category display order for the grouped software selector (first-appearance order)
