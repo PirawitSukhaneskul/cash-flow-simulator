@@ -3,28 +3,37 @@
  *
  * SETUP INSTRUCTIONS:
  * 1. Go to https://script.google.com → New Project
- * 2. Paste this entire file into the editor
- * 3. Replace SHEET_ID with your Google Sheets document ID
- * 4. Deploy → New Deployment → Web App
+ * 2. Paste this entire file into the editor, Save
+ * 3. Deploy → New Deployment → Web App
  *    - Execute as: Me
  *    - Who has access: Anyone
- * 5. Copy the Web App URL
- * 6. Set VITE_GAS_URL=<paste URL here> in your .env file
- * 7. Redeploy the React app to GitHub Pages
+ *    (Authorize when prompted — the script sends email + logs to a Sheet)
+ * 4. Copy the Web App URL → set as VITE_GAS_URL (GitHub secret), redeploy
  *
- * GOOGLE SHEET SETUP:
- * Create a Google Sheet with two tabs:
- *   - "Submissions" (columns auto-created on first submission)
- *   - "Errors"      (optional — auto-created on first error)
+ * No Sheet ID needed: on the first submission the script auto-creates a
+ * spreadsheet named below and remembers it in Script Properties. To use an
+ * existing sheet instead, put its ID in CONFIG.SHEET_ID.
  */
 
-// ── CONFIG — change these ──────────────────────────────────
+// ── CONFIG ─────────────────────────────────────────────────
 const CONFIG = {
-  SHEET_ID: 'YOUR_GOOGLE_SHEET_ID_HERE',   // e.g. '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms'
+  SHEET_ID: '',                            // optional: leave blank to auto-create
+  SHEET_NAME: 'Arch Firm Simulator — Submissions',
   SUBMISSIONS_TAB: 'Submissions',
   ERRORS_TAB: 'Errors',
   APP_NAME: 'Arch Firm Cash Flow Simulator',
-  REPLY_EMAIL: 'your.email@gmail.com',
+}
+
+// ── Resolve (or auto-create) the spreadsheet ───────────────
+function getSpreadsheet() {
+  const props = PropertiesService.getScriptProperties()
+  let id = CONFIG.SHEET_ID || props.getProperty('SHEET_ID')
+  if (id) {
+    try { return SpreadsheetApp.openById(id) } catch (e) { /* fall through, recreate */ }
+  }
+  const ss = SpreadsheetApp.create(CONFIG.SHEET_NAME)
+  props.setProperty('SHEET_ID', ss.getId())
+  return ss
 }
 
 // ── Entry point: POST ──────────────────────────────────────
@@ -55,7 +64,7 @@ function doGet() {
 
 // ── Save submission to Google Sheets ──────────────────────
 function saveToSheet(data) {
-  const ss    = SpreadsheetApp.openById(CONFIG.SHEET_ID)
+  const ss    = getSpreadsheet()
   let   sheet = ss.getSheetByName(CONFIG.SUBMISSIONS_TAB)
 
   if (!sheet) {
@@ -172,7 +181,6 @@ function sendReportEmail(data) {
     to:       data.email,
     subject:  `${CONFIG.APP_NAME} Report${scenName} — ${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd MMM yyyy')}`,
     htmlBody: html,
-    replyTo:  CONFIG.REPLY_EMAIL,
     name:     CONFIG.APP_NAME,
   })
 }
@@ -180,7 +188,7 @@ function sendReportEmail(data) {
 // ── Error logging ──────────────────────────────────────────
 function logError(err, e) {
   try {
-    const ss    = SpreadsheetApp.openById(CONFIG.SHEET_ID)
+    const ss    = getSpreadsheet()
     let   sheet = ss.getSheetByName(CONFIG.ERRORS_TAB) || ss.insertSheet(CONFIG.ERRORS_TAB)
     sheet.appendRow([new Date(), err.message, err.stack, e && e.postData ? e.postData.contents.substring(0, 500) : ''])
   } catch (e2) {
