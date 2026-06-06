@@ -362,6 +362,11 @@ body {
   gap: 10px;
 }
 
+/* Hide number-input spinner arrows (saves horizontal space) */
+.no-spin::-webkit-outer-spin-button,
+.no-spin::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.no-spin { -moz-appearance: textfield; appearance: textfield; }
+
 /* Page visit counter at the bottom of the dashboard */
 .visitor-counter {
   display: flex;

@@ -106,20 +106,20 @@ function MilestoneEditor({ milestones, preset, duration, onChangePreset, onChang
       {/* Milestone rows */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 6 }}>
         {milestones.map((ms, idx) => (
-          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 48px 60px 22px', gap: 4, alignItems: 'center' }}>
-            <input className="field" style={{ fontSize: '0.72rem', padding: '4px 7px' }}
+          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 74px 74px 22px', gap: 4, alignItems: 'center' }}>
+            <input className="field" style={{ fontSize: '0.72rem', padding: '4px 7px', minWidth: 0 }}
               value={ms.name}
               onChange={e => updateMs(idx, 'name', e.target.value)}
               placeholder="Stage name" />
             <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <input type="number" className="field" style={{ fontSize: '0.72rem', padding: '4px 5px', textAlign: 'right' }}
+              <input type="number" className="field no-spin" style={{ fontSize: '0.72rem', padding: '4px 6px', textAlign: 'right', width: '100%', minWidth: 0 }}
                 value={ms.pct} min={0} max={100}
                 onChange={e => updateMs(idx, 'pct', Number(e.target.value))} />
               <span style={{ fontSize: '0.65rem', color: 'var(--ink-4)' }}>%</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <span style={{ fontSize: '0.62rem', color: 'var(--ink-4)', whiteSpace: 'nowrap' }}>Mo</span>
-              <input type="number" className="field" style={{ fontSize: '0.72rem', padding: '4px 5px', textAlign: 'right' }}
+              <input type="number" className="field no-spin" style={{ fontSize: '0.72rem', padding: '4px 6px', textAlign: 'right', width: '100%', minWidth: 0 }}
                 value={ms.month} min={1} max={Math.max(duration, 1)}
                 onChange={e => updateMs(idx, 'month', Number(e.target.value))} />
             </div>
