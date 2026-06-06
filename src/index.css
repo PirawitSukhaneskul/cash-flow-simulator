@@ -5,16 +5,20 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* Palette */
-  --rice:       #f7f5f0;
-  --rice-dark:  #f0ede6;
+  /* Palette — warm paper (Claude-style) */
+  --rice:       #faf9f5;
+  --rice-dark:  #f3f1ea;
   --white:      #ffffff;
-  --ink:        #0f0f0f;
-  --ink-2:      #2d2d2d;
-  --ink-3:      #555555;
-  --ink-4:      #888888;
-  --border:     #e0dcd4;
-  --border-md:  #c8c4bc;
+  --ink:        #1a1a18;
+  --ink-2:      #2d2d2b;
+  --ink-3:      #5c5b55;
+  --ink-4:      #908e86;
+  --border:     #e8e4da;
+  --border-md:  #d2cdc1;
+
+  /* Claude terracotta accent (chrome only — data colors stay semantic) */
+  --coral:      #c9684a;
+  --coral-light:#f7ede8;
 
   /* Mondrian accents */
   --blue:       #1a56db;
@@ -28,11 +32,11 @@
   --amber:      #c47c00;
   --amber-light:#fffbeb;
 
-  /* Shadows */
-  --sh-xs: 0 1px 2px rgba(0,0,0,0.06);
-  --sh-sm: 0 2px 8px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
-  --sh-md: 0 6px 20px rgba(0,0,0,0.09), 0 2px 6px rgba(0,0,0,0.05);
-  --sh-lg: 0 16px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.07);
+  /* Shadows — soft, warm, diffuse */
+  --sh-xs: 0 1px 2px rgba(60,50,40,0.05);
+  --sh-sm: 0 1px 3px rgba(60,50,40,0.06), 0 1px 2px rgba(60,50,40,0.04);
+  --sh-md: 0 4px 16px rgba(60,50,40,0.07), 0 1px 4px rgba(60,50,40,0.04);
+  --sh-lg: 0 12px 36px rgba(60,50,40,0.10), 0 3px 10px rgba(60,50,40,0.05);
 
   /* Radii — iOS style */
   --r-xs:   6px;
@@ -108,7 +112,7 @@ body {
   color: var(--ink);
   text-decoration: none;
 }
-.header-logo .logo-accent { color: var(--blue); }
+.header-logo .logo-accent { color: var(--coral); }
 
 .header-nav { display: flex; align-items: center; gap: 4px; }
 
@@ -190,7 +194,7 @@ body {
   transition: all 0.15s ease;
 }
 .input-tab:hover  { color: var(--ink-2); }
-.input-tab.active { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+.input-tab.active { color: var(--ink); border-bottom-color: var(--coral); font-weight: 600; }
 
 /* Tab content area */
 .tab-scroll {

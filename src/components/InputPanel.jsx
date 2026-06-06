@@ -793,7 +793,7 @@ function WorstCaseSection({ inputs, update, results }) {
 }
 
 // ── Main InputPanel ────────────────────────────────────────
-export default function InputPanel({ inputs, update, results, onGetReport, onSaveScenario }) {
+export default function InputPanel({ inputs, update, results, onSaveScenario }) {
   const [tab, setTab] = useState('team')
 
   const TABS = [
@@ -835,14 +835,11 @@ export default function InputPanel({ inputs, update, results, onGetReport, onSav
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {onSaveScenario && (
-            <button className="btn btn-ghost btn-lg" style={{ flex: 1, justifyContent: 'center', borderRadius: 'var(--r-md)' }}
+            <button className="btn btn-blue btn-lg" style={{ flex: 1, justifyContent: 'center' }}
               onClick={onSaveScenario}>
-              <Save size={15} /> Save
+              <Save size={15} /> Save Scenario
             </button>
           )}
-          <button className="btn btn-blue btn-lg" style={{ flex: 2, justifyContent: 'center' }} onClick={onGetReport}>
-            📥 Get Excel Report
-          </button>
         </div>
       </div>
     </div>

@@ -3,12 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import InputPanel from '../components/InputPanel'
 import OutputPanel from '../components/OutputPanel'
-import Questionnaire from '../components/Questionnaire'
 import { DEFAULT_INPUTS } from '../data/defaults'
 import { calculateCashFlow } from '../utils/calculations'
 
 export default function SimulatorPage({ savedScenarios, onSaveScenario, onUpdateScenario, initialInputs, editingIdx }) {
-  const [showQuestionnaire, setShowQuestionnaire] = useState(false)
   const [mobileTab, setMobileTab]   = useState('input')
   const [inputs, setInputs]         = useState(() => initialInputs ? { ...DEFAULT_INPUTS, ...initialInputs } : DEFAULT_INPUTS)
   const [scenarioName, setScenarioName] = useState(
@@ -45,10 +43,6 @@ export default function SimulatorPage({ savedScenarios, onSaveScenario, onUpdate
     navigate('/compare')
   }
 
-  function handleQuestionnaireSubmit() {
-    setShowQuestionnaire(false)
-  }
-
   return (
     <div className="page-wrap">
       <Header scenarioName={scenarioName} onNameChange={setScenarioName} />
@@ -60,23 +54,12 @@ export default function SimulatorPage({ savedScenarios, onSaveScenario, onUpdate
         </div>
       )}
 
-      {showQuestionnaire && (
-        <Questionnaire
-          onSubmit={handleQuestionnaireSubmit}
-          onClose={() => setShowQuestionnaire(false)}
-          inputs={inputs}
-          results={results}
-          scenarioName={scenarioName}
-        />
-      )}
-
       <div className="simulator-layout">
         <div className={`input-panel-wrap ${mobileTab === 'output' ? 'mobile-hidden' : ''}`}>
           <InputPanel
             inputs={inputs}
             update={update}
             results={results}
-            onGetReport={() => setShowQuestionnaire(true)}
             onSaveScenario={isEditing ? handleUpdateScenario : handleSaveScenario}
           />
         </div>
@@ -84,7 +67,6 @@ export default function SimulatorPage({ savedScenarios, onSaveScenario, onUpdate
           <OutputPanel
             inputs={inputs}
             results={results}
-            onGetReport={() => setShowQuestionnaire(true)}
             onSaveScenario={isEditing ? handleUpdateScenario : handleSaveScenario}
           />
         </div>

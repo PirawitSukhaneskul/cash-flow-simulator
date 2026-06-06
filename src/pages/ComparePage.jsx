@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
+import Questionnaire from '../components/Questionnaire'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { fmtFull, fmt } from '../utils/calculations'
 import { Edit2, Copy, Trash2, Pencil, Check, X } from 'lucide-react'
@@ -230,6 +231,7 @@ function BestScenario({ scenarios }) {
 // ── Main Compare Page ──────────────────────────────────────
 export default function ComparePage({ scenarios, onClearScenario, onEditScenario, onDuplicateScenario, onRenameScenario }) {
   const navigate = useNavigate()
+  const [showReport, setShowReport] = useState(false)
 
   if (!scenarios || scenarios.length === 0) {
     return (
@@ -263,8 +265,20 @@ export default function ComparePage({ scenarios, onClearScenario, onEditScenario
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-ghost" onClick={() => navigate('/')}>← Simulator</button>
+            <button className="btn btn-blue" onClick={() => setShowReport(true)}>📄 Get PDF Report</button>
           </div>
         </div>
+
+        {showReport && (
+          <Questionnaire
+            scenarios={scenarios}
+            inputs={scenarios[0]?.inputs}
+            results={scenarios[0]?.results}
+            scenarioName={scenarios.length > 1 ? `Comparison (${scenarios.length} scenarios)` : scenarios[0]?.name}
+            onSubmit={() => {}}
+            onClose={() => setShowReport(false)}
+          />
+        )}
 
         {/* Scenario Slot Cards */}
         <div className="scenario-slots">

@@ -390,7 +390,7 @@ function MonthlyTable({ data, months }) {
 }
 
 // ── Main OutputPanel ───────────────────────────────────────
-export default function OutputPanel({ inputs, results, onGetReport, onSaveScenario }) {
+export default function OutputPanel({ inputs, results, onSaveScenario }) {
   return (
     <div className="output-panel">
       {/* 1. Annual Net Profit hero on top */}
@@ -413,29 +413,21 @@ export default function OutputPanel({ inputs, results, onGetReport, onSaveScenar
       </div>
       <MonthlyTable data={results.monthlyData} months={inputs.months} />
 
-      {/* Desktop download banner */}
+      {/* Desktop save banner */}
       <div className="download-banner desktop-only">
         <div>
-          <h3>ดาวน์โหลด Excel Report</h3>
-          <p>Cash flow + KPIs + project breakdown — sent to email</p>
+          <h3>บันทึก Scenario นี้</h3>
+          <p>Save to compare scenarios &amp; download the PDF report on the Compare page</p>
         </div>
-        <div style={{ display:'flex', gap:8 }}>
-          <button className="btn btn-ghost btn-lg" style={{ borderRadius:'var(--r-md)', color:'white', borderColor:'rgba(255,255,255,0.3)' }} onClick={onSaveScenario}>
-            💾 Save Scenario
-          </button>
-          <button className="btn btn-blue btn-lg" onClick={onGetReport}>
-            📥 Get Report
-          </button>
-        </div>
+        <button className="btn btn-blue btn-lg" onClick={onSaveScenario}>
+          💾 Save Scenario
+        </button>
       </div>
 
       {/* Mobile sticky action bar */}
       <div className="mobile-action-bar mobile-only">
-        <button className="btn btn-ghost btn-lg" style={{ flex:1, justifyContent:'center' }} onClick={onSaveScenario}>
+        <button className="btn btn-blue btn-lg" style={{ flex:1, justifyContent:'center' }} onClick={onSaveScenario}>
           💾 Save Scenario
-        </button>
-        <button className="btn btn-blue btn-lg" style={{ flex:1, justifyContent:'center' }} onClick={onGetReport}>
-          📥 Get Report
         </button>
       </div>
 

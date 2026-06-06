@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FileSpreadsheet, X, Send } from 'lucide-react'
 
 import { GAS_URL } from '../config'
+import { buildReportPdf } from '../utils/pdfReport'
 
 const TOTAL_STEPS = 4
 
@@ -34,7 +35,7 @@ async function postToGAS(payload) {
   }
 }
 
-export default function Questionnaire({ onSubmit, onClose, inputs, results, scenarioName }) {
+export default function Questionnaire({ onSubmit, onClose, inputs, results, scenarioName, scenarios }) {
   const [step,   setStep]   = useState(1)
   const [status, setStatus] = useState('idle') // idle | sending | success | error
   const [errMsg, setErrMsg] = useState('')
@@ -59,6 +60,15 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
 
     setStatus('sending')
 
+    // Build the PDF report (comparison + each scenario incl. cash flow graph)
+    let pdfBase64 = null, pdfName = null
+    try {
+      if (scenarios && scenarios.length) {
+        const r = buildReportPdf(scenarios, answers)
+        pdfBase64 = r.base64; pdfName = r.filename
+      }
+    } catch (e) { console.warn('[Arch Sim] PDF build failed:', e) }
+
     const payload = {
       email:       answers.email,
       experience:  answers.experience,
@@ -81,6 +91,10 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
       breakEvenMonth:  results?.breakEvenMonth  || null,
       minSafeBalance:  results?.minSafeBalance  || 0,
       monthlyData:     (results?.monthlyData    || []).slice(0, 12),
+
+      scenarioCount: scenarios?.length || 1,
+      pdfBase64,
+      pdfName,
     }
 
     const result = await postToGAS(payload)
@@ -165,8 +179,8 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
 
         {/* Step 1 — Email */}
         {step === 1 && <>
-          <h2 className="modal-title">รับ Excel Report</h2>
-          <p className="modal-desc">กรอก email เพื่อรับไฟล์ Cash Flow สรุปผลการจำลอง</p>
+          <h2 className="modal-title">รับ PDF Report</h2>
+          <p className="modal-desc">กรอก email เพื่อรับรายงาน PDF — เปรียบเทียบทุก scenario พร้อมกราฟ cash flow</p>
           <div className="privacy-notice">
             🔒 <strong>Privacy:</strong> By submitting, you agree that your simulation inputs and
             email may be saved for research and product improvement. We do not sell your data.
