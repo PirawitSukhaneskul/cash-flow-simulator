@@ -1,6 +1,5 @@
 import { calcSelectedSoftwareCost } from '../data/softwareCatalog'
-
-const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+import { MONTH_NAMES, parseYM, addMonths, currentYM } from './dates'
 
 export function calculateCashFlow(inputs) {
   const {
@@ -15,7 +14,9 @@ export function calculateCashFlow(inputs) {
     paymentDelay: globalDelay = 0,
     useCustomMinBalance = false,
     minSafeBalanceCustom = null,
+    simStartDate = currentYM(),
   } = inputs
+  const startYM = parseYM(simStartDate)
 
   // ── Fixed monthly costs ───────────────────────────────────
   const softwareMonthlyCost = calcSelectedSoftwareCost(selectedSoftware)
@@ -70,9 +71,16 @@ export function calculateCashFlow(inputs) {
     balance       += net
     const isRisky  = balance < minSafeBalance
 
+    const cur = addMonths(startYM, i)
+    // Real month label; show the year compactly at Jan and the first point
+    const monthLabel = (cur.m === 0 || i === 0)
+      ? `${MONTH_NAMES[cur.m]} '${String(cur.y).slice(2)}`
+      : MONTH_NAMES[cur.m]
+
     monthlyData.push({
       month:        `M${i + 1}`,
-      monthLabel:   MONTH_NAMES[i % 12],
+      monthLabel,
+      dateLabel:    `${MONTH_NAMES[cur.m]} ${cur.y}`,
       year:         Math.floor(i / 12) + 1,
       revenue:      Math.round(revenue),
       expenses:     Math.round(expenses + tax),

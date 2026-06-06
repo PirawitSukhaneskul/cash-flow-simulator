@@ -1,4 +1,5 @@
 import { SOFTWARE_PACK_DEFAULTS, SOFTWARE_CATALOG } from './softwareCatalog'
+import { currentYM } from '../utils/dates'
 
 // ── Milestone presets ──────────────────────────────────────
 export const MILESTONE_PRESETS = {
@@ -168,6 +169,10 @@ const DEFAULT_PROJECTS = [
 // ── Master default inputs ──────────────────────────────────
 export const DEFAULT_INPUTS = {
   businessType: 'architecture',
+
+  // Simulation timeline origin (YYYY-MM). Each project's startMonth is a
+  // 1-based offset from this. Defaults to the current month.
+  simStartDate: currentYM(),
 
   // Team
   teamPack: 'pack3',

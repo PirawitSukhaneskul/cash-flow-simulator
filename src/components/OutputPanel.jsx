@@ -20,7 +20,7 @@ function CashTooltip({ active, payload, minSafeBalance }) {
   return (
     <div style={{ background:'white', border:'1px solid var(--border)', borderRadius:12, padding:'12px 16px', boxShadow:'var(--sh-md)', fontSize:'0.78rem', minWidth:210 }}>
       <div style={{ fontWeight:700, marginBottom:8, color:'var(--ink-3)' }}>
-        {d.monthLabel}{d.year > 1 ? ` Y${d.year}` : ''}
+        {d.dateLabel || d.monthLabel}
         {d.isRisky && <span style={{ color:'var(--red)', marginLeft:6, fontSize:'0.7rem' }}>⚠️ Risky</span>}
       </div>
       {[
@@ -68,7 +68,7 @@ function BalanceAlert({ riskyCount, firstRisky }) {
     <div className="balance-alert warning" style={{ marginBottom:12 }}>
       <span className="balance-alert-icon">⚠️</span>
       <div><div className="balance-alert-title">
-        Risky in {firstRisky?.monthLabel}{firstRisky?.year > 1 ? ` Y${firstRisky.year}` : ''}
+        Risky in {firstRisky?.dateLabel || firstRisky?.monthLabel}
       </div>
         <div className="balance-alert-desc">{riskyCount} month(s) below min safe — consider credit line</div></div>
     </div>
@@ -204,7 +204,7 @@ function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentD
   const count   = Math.min(months, 24)
   const display = data.slice(0, count).map((d, i) => ({
     ...d,
-    label: d.monthLabel + (d.year > 1 ? ` Y${d.year}` : ''),
+    label: d.monthLabel,
   }))
 
   // Cleaner chart: keep a visible vertex on every month, but show the value
@@ -374,7 +374,7 @@ function MonthlyTable({ data, months }) {
           <tbody>
             {data.slice(0, months).map(row => (
               <tr key={row.month} className={row.isRisky ? 'risky-row' : ''}>
-                <td>{row.monthLabel}{row.year > 1 ? ` Y${row.year}` : ''}</td>
+                <td>{row.dateLabel || row.monthLabel}</td>
                 <td className={row.revenue > 0 ? 'cell-positive' : ''}>{fmtFull(row.revenue)}</td>
                 <td style={{ color:'var(--red)' }}>{fmtFull(row.expenses)}</td>
                 <td className={row.net >= 0 ? 'cell-positive' : 'cell-negative'}>{fmtFull(row.net)}</td>

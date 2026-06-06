@@ -81,7 +81,7 @@ function cashFlowChartDataUrl(monthlyData, minSafeBalance, months) {
   const step = n > 14 ? 3 : n > 8 ? 2 : 1
   data.forEach((d, i) => {
     if (i % step !== 0) return
-    const lbl = (d.monthLabel || MONTHS[i % 12]) + (d.year > 1 ? ` Y${d.year}` : '')
+    const lbl = d.monthLabel || MONTHS[i % 12]
     ctx.fillText(lbl, xAt(i), padT + plotH + 18)
   })
 

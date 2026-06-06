@@ -4,6 +4,7 @@ import { STAFF_ROLES, TEAM_PACKS, OFFICE_DEFAULTS, MILESTONE_PRESETS, buildDefau
 import { SOFTWARE_CATALOG, SOFTWARE_CATEGORY_ORDER, SOFTWARE_PACK_DEFAULTS, calcSelectedSoftwareCost } from '../data/softwareCatalog'
 import { ASA_PROJECT_TYPES, PROJECT_SIZE_PRESETS, getASAGuidelineFee } from '../data/asa'
 import { fmtFull, fmt } from '../utils/calculations'
+import { currentYM, parseYM, addMonths, fmtYM, monthsBetween, ymLabel } from '../utils/dates'
 
 // ── Helpers ────────────────────────────────────────────────
 // Comma-grouped currency input. Native <input type="number"> can't render
@@ -140,7 +141,7 @@ function MilestoneEditor({ milestones, preset, duration, onChangePreset, onChang
 }
 
 // ── Add Project Modal ──────────────────────────────────────
-function AddProjectModal({ onAdd, onUpdate, onClose, editProject }) {
+function AddProjectModal({ onAdd, onUpdate, onClose, editProject, simStartDate = currentYM() }) {
   const isEdit = !!editProject
   const [size,            setSize]            = useState('medium')
   const [type,            setType]            = useState(editProject?.type ?? 'residential')
@@ -288,12 +289,14 @@ function AddProjectModal({ onAdd, onUpdate, onClose, editProject }) {
           <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--green)' }}>{fmtFull(revenue)}</span>
         </div>
 
-        {/* Start month + duration */}
+        {/* Start date + duration */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
           <div className="input-group" style={{ marginBottom: 0 }}>
-            <div className="input-row"><span className="input-label-text">Start Month</span></div>
-            <input type="number" className="field" value={start} min={1} max={60}
-              onChange={e => setStart(Number(e.target.value))} />
+            <div className="input-row"><span className="input-label-text">Start Date</span></div>
+            <input type="month" className="field" value={fmtYM(addMonths(simStartDate, start - 1))}
+              min={simStartDate}
+              onChange={e => setStart(Math.max(1, monthsBetween(simStartDate, e.target.value) + 1))} />
+            <div className="input-hint">Month {start} · {start === 1 ? 'start of simulation' : `${start - 1} mo after start`}</div>
           </div>
           <div className="input-group" style={{ marginBottom: 0 }}>
             <div className="input-row"><span className="input-label-text">Duration (mo)</span></div>
@@ -460,7 +463,7 @@ function ProjectsTab({ inputs, update }) {
               <div className="project-item-info">
                 <div className="project-item-name">{proj.name}</div>
                 <div className="project-item-meta">
-                  {type?.label} · {fmt(proj.constructionCost)} · M{proj.startMonth} · {proj.duration}mo
+                  {type?.label} · {fmt(proj.constructionCost)} · {ymLabel(addMonths(inputs.simStartDate || currentYM(), (proj.startMonth || 1) - 1))} · {proj.duration}mo
                   {proj.paymentDelay > 0 && ` · +${proj.paymentDelay}mo delay`}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
@@ -505,6 +508,13 @@ function ProjectsTab({ inputs, update }) {
       {/* Simulation period */}
       <div style={{ marginTop: 14 }}>
         <div className="input-group">
+          <div className="input-row"><span className="input-label-text">Simulation Start Date</span></div>
+          <input type="month" className="field" value={inputs.simStartDate || currentYM()}
+            onChange={e => update({ simStartDate: e.target.value || currentYM() })} />
+          <div className="input-hint">Timeline starts here · projects are scheduled from this month</div>
+        </div>
+
+        <div className="input-group">
           <div className="input-row"><span className="input-label-text">Simulation Period</span></div>
           <div className="pill-row">
             {[12, 24, 36, 60].map(m => (
@@ -525,8 +535,8 @@ function ProjectsTab({ inputs, update }) {
         </div>
       </div>
 
-      {showAdd && <AddProjectModal onAdd={proj => update({ projects: [...inputs.projects, proj] })} onClose={() => setShowAdd(false)} />}
-      {editProject && <AddProjectModal editProject={editProject} onUpdate={updateProject} onClose={() => setEditProject(null)} />}
+      {showAdd && <AddProjectModal simStartDate={inputs.simStartDate} onAdd={proj => update({ projects: [...inputs.projects, proj] })} onClose={() => setShowAdd(false)} />}
+      {editProject && <AddProjectModal simStartDate={inputs.simStartDate} editProject={editProject} onUpdate={updateProject} onClose={() => setEditProject(null)} />}
     </div>
   )
 }
