@@ -22,6 +22,37 @@ const CONFIG = {
   SUBMISSIONS_TAB: 'Submissions',
   ERRORS_TAB: 'Errors',
   APP_NAME: 'Arch Firm Cash Flow Simulator',
+  ADMIN_KEY: '30032000',                   // key the Admin page must send to read submissions
+}
+
+// Full column schema for the Submissions sheet (order matters)
+const SUBMISSION_HEADERS = [
+  'Timestamp', 'Email', 'Scenario Name', 'Scenario Count',
+  'Experience', 'Has Business', 'Rating', 'Reason',
+  'Business Type', 'Projects Count', 'Projects Detail',
+  'Team Size', 'Team Breakdown',
+  'Software Count', 'Software List', 'Software Cost/yr',
+  'Salary/yr', 'Staff % of Exp',
+  'Rent', 'Utilities', 'Marketing', 'Equipment', 'Outsourcing', 'Accounting', 'Other',
+  'Tax Rate %', 'Initial Capital', 'Sim Months', 'Payment Delay (mo)', 'Min Safe Balance',
+  'Annual Revenue', 'Annual Expenses', 'Annual Net Profit', 'Annual Tax', 'Monthly Fixed Cost',
+  'Break-even Month', 'Risky Months', 'Email Status',
+]
+
+function submissionRow(data) {
+  return [
+    new Date(), data.email, data.scenarioName || '', data.scenarioCount || 1,
+    data.experience || '', data.hasBusiness || '', data.rating || '', data.reason || '',
+    data.businessType || '', data.projectCount || 0, data.projectsDetail || '',
+    data.teamSize || 0, data.teamBreakdown || '',
+    data.softwareCount || 0, data.softwareList || '', data.annualSoftware || 0,
+    data.annualSalary || 0, data.staffCostPct || '',
+    data.rent || 0, data.utilities || 0, data.marketing || 0, data.equipment || 0,
+    data.outsourcing || 0, data.accounting || 0, data.other || 0,
+    data.taxRate || 0, data.initialCapital || 0, data.simMonths || 0, data.paymentDelay || 0, data.minSafeBalance || 0,
+    data.annualRevenue || 0, data.annualExpenses || 0, data.annualNetProfit || 0, data.annualTax || 0, data.monthlyFixed || 0,
+    data.breakEvenMonth || '', data.riskyCount || 0, 'sent',
+  ]
 }
 
 // ── Resolve (or auto-create) the spreadsheet ───────────────
@@ -70,51 +101,44 @@ function doGet(e) {
     const n = parseInt(PropertiesService.getScriptProperties().getProperty('VISITS') || '0', 10) || 0
     return jsonOut({ count: n })
   }
+  if (action === 'submissions') {
+    // Admin-only: return all submissions as JSON (requires the admin key)
+    if (!e.parameter || e.parameter.key !== CONFIG.ADMIN_KEY) {
+      return jsonOut({ success: false, error: 'unauthorized' })
+    }
+    const ss = getSpreadsheet()
+    const sheet = ss.getSheetByName(CONFIG.SUBMISSIONS_TAB)
+    const visits = parseInt(PropertiesService.getScriptProperties().getProperty('VISITS') || '0', 10) || 0
+    if (!sheet || sheet.getLastRow() < 2) return jsonOut({ success: true, headers: SUBMISSION_HEADERS, rows: [], visits })
+    const values = sheet.getDataRange().getValues()
+    const headers = values[0]
+    const rows = values.slice(1).map(r => {
+      const o = {}
+      headers.forEach((h, i) => { o[h] = r[i] })
+      return o
+    })
+    return jsonOut({ success: true, headers, rows, visits })
+  }
   return jsonOut({ status: 'ok', app: CONFIG.APP_NAME })
 }
 
-// ── Save submission to Google Sheets ──────────────────────
+// ── Save submission to Google Sheets (full Stage-2 schema) ─
 function saveToSheet(data) {
   const ss    = getSpreadsheet()
   let   sheet = ss.getSheetByName(CONFIG.SUBMISSIONS_TAB)
 
-  if (!sheet) {
-    sheet = ss.insertSheet(CONFIG.SUBMISSIONS_TAB)
-    sheet.appendRow([
-      'Timestamp', 'Email', 'Scenario Name',
-      'Experience', 'Has Business', 'Rating', 'Reason',
-      'Projects Count', 'Annual Revenue', 'Annual Expenses',
-      'Annual Net Profit', 'Annual Tax',
-      'Monthly Fixed Cost', 'Initial Capital', 'Tax Rate %',
-      'Team Size', 'Payment Delay (mo)', 'Risky Months',
-      'Break-even Month', 'Min Safe Balance',
-    ])
+  if (!sheet) sheet = ss.insertSheet(CONFIG.SUBMISSIONS_TAB)
+
+  // Ensure the header row matches the current full schema
+  const needHeader = sheet.getLastRow() === 0 ||
+    sheet.getRange(1, 1, 1, SUBMISSION_HEADERS.length).getValues()[0].join('|') !== SUBMISSION_HEADERS.join('|')
+  if (needHeader) {
+    sheet.getRange(1, 1, 1, SUBMISSION_HEADERS.length).setValues([SUBMISSION_HEADERS])
     sheet.setFrozenRows(1)
-    sheet.getRange(1, 1, 1, 20).setFontWeight('bold')
+    sheet.getRange(1, 1, 1, SUBMISSION_HEADERS.length).setFontWeight('bold')
   }
 
-  sheet.appendRow([
-    new Date(),
-    data.email,
-    data.scenarioName || '',
-    data.experience   || '',
-    data.hasBusiness  || '',
-    data.rating       || '',
-    data.reason       || '',
-    data.projectCount   || 0,
-    data.annualRevenue  || 0,
-    data.annualExpenses || 0,
-    data.annualNetProfit || 0,
-    data.annualTax      || 0,
-    data.monthlyFixed   || 0,
-    data.initialCapital || 0,
-    data.taxRate        || 0,
-    data.teamSize       || 0,
-    data.paymentDelay   || 0,
-    data.riskyCount     || 0,
-    data.breakEvenMonth || '',
-    data.minSafeBalance || 0,
-  ])
+  sheet.appendRow(submissionRow(data))
 }
 
 // ── Send HTML email report ─────────────────────────────────

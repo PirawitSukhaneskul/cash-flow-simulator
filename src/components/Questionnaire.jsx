@@ -3,6 +3,7 @@ import { FileSpreadsheet, X, Send } from 'lucide-react'
 
 import { GAS_URL } from '../config'
 import { buildReportPdf } from '../utils/pdfReport'
+import { getSoftwareById } from '../data/softwareCatalog'
 
 const TOTAL_STEPS = 4
 
@@ -69,6 +70,18 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
       }
     } catch (e) { console.warn('[Arch Sim] PDF build failed:', e) }
 
+    // Full detail of the (primary) simulation — software, team, projects, costs
+    const inp = inputs || {}
+    const softwareList = (inp.selectedSoftware || [])
+      .map(s => { const c = getSoftwareById(s.id); return `${c?.name || s.name || s.id} x${s.users || 1}` })
+      .join(', ')
+    const teamBreakdown = (inp.team || [])
+      .map(t => `${t.role} x${t.count} @฿${(t.salary || 0).toLocaleString('en-US')}`)
+      .join(', ')
+    const projectsDetail = (inp.projects || [])
+      .map(p => `${p.name} [${p.type}, ฿${(p.constructionCost || 0).toLocaleString('en-US')}, ${Number(p.feePercent).toFixed(2)}%]`)
+      .join(' | ')
+
     const payload = {
       email:       answers.email,
       experience:  answers.experience,
@@ -77,20 +90,38 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
       reason:      answers.reason,
       scenarioName: scenarioName || '',
 
-      projectCount:    (inputs?.projects || []).length,
+      projectCount:    (inp.projects || []).length,
       annualRevenue:   results?.annualRevenue   || 0,
       annualExpenses:  results?.annualExpenses  || 0,
       annualNetProfit: results?.annualNetProfit || 0,
       annualTax:       results?.annualTax       || 0,
       monthlyFixed:    results?.monthlyFixed    || 0,
-      initialCapital:  inputs?.initialCapital   || 0,
-      taxRate:         inputs?.taxRate          || 0,
-      teamSize:        (inputs?.team || []).reduce((s, r) => s + r.count, 0),
-      paymentDelay:    inputs?.paymentDelay     || 0,
+      initialCapital:  inp.initialCapital       || 0,
+      taxRate:         inp.taxRate              || 0,
+      teamSize:        (inp.team || []).reduce((s, r) => s + r.count, 0),
+      paymentDelay:    inp.paymentDelay         || 0,
       riskyCount:      results?.riskyCount      || 0,
       breakEvenMonth:  results?.breakEvenMonth  || null,
       minSafeBalance:  results?.minSafeBalance  || 0,
       monthlyData:     (results?.monthlyData    || []).slice(0, 12),
+
+      // ── Stage 2: full simulation detail ──
+      businessType:    inp.businessType || '',
+      softwareCount:   (inp.selectedSoftware || []).length,
+      softwareList,
+      annualSoftware:  results?.annualSoftware  || 0,
+      teamBreakdown,
+      annualSalary:    results?.annualSalary    || 0,
+      staffCostPct:    results?.staffCostPct    || '',
+      projectsDetail,
+      rent:            inp.rent        || 0,
+      utilities:       inp.utilities   || 0,
+      marketing:       inp.marketing   || 0,
+      equipment:       inp.equipment   || 0,
+      outsourcing:     inp.outsourcing || 0,
+      accounting:      inp.accounting  || 0,
+      other:           inp.other       || 0,
+      simMonths:       inp.months || 0,
 
       scenarioCount: scenarios?.length || 1,
       pdfBase64,

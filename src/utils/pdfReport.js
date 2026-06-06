@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf'
+import { getSoftwareById } from '../data/softwareCatalog'
 
 // ── Helpers ────────────────────────────────────────────────
 const THB = (n) => '฿' + Math.round(Number(n) || 0).toLocaleString('en-US')
@@ -201,11 +202,26 @@ export function generateReportPdf(scenarios, answers = {}) {
       `Worst case delay: ${s.inputs.paymentDelay > 0 ? '+' + s.inputs.paymentDelay + ' month(s)' : 'Normal'}   ·   Min safe cash: ${THB(s.results.minSafeBalance)}`,
     ]
     lines.forEach(l => { doc.text(l, M, y); y += 5 })
-    y += 2;
+    y += 1;
     (s.inputs.projects || []).slice(0, 8).forEach(p => {
       doc.text(`•  ${p.name}: ${THB(p.constructionCost)} @ ${p.feePercent.toFixed(2)}% = ${THB(p.constructionCost * p.feePercent / 100)}`, M + 2, y); y += 4.6
     })
-    y += 3
+    y += 2
+
+    // Team breakdown + software list (the detail collected per simulation)
+    const teamStr = (s.inputs.team || []).map(t => `${t.role} x${t.count}`).join(', ') || '—'
+    const swStr = (s.inputs.selectedSoftware || [])
+      .map(x => { const c = getSoftwareById(x.id); return `${c?.name || x.id} x${x.users || 1}` }).join(', ') || '—'
+    const wrap = (label, str) => {
+      doc.setFont('helvetica', 'bold'); doc.text(label, M, y)
+      doc.setFont('helvetica', 'normal')
+      const t = doc.splitTextToSize(str, PW - 2 * M - 22)
+      t.forEach((ln, k) => { doc.text(ln, M + 22, y + k * 4.6) })
+      y += Math.max(4.6, t.length * 4.6) + 1.5
+    }
+    wrap('Team:', teamStr)
+    wrap('Software:', swStr)
+    y += 2
 
     // warnings
     const warns = scenarioWarnings(s)
