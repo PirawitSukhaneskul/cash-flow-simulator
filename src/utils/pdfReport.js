@@ -2,7 +2,10 @@ import { jsPDF } from 'jspdf'
 import { getSoftwareById } from '../data/softwareCatalog'
 
 // ── Helpers ────────────────────────────────────────────────
-const THB = (n) => '฿' + Math.round(Number(n) || 0).toLocaleString('en-US')
+// jsPDF's built-in fonts have no Thai baht glyph (฿ -> "?"), so PDF *text* uses
+// the ASCII "THB" unit. The canvas chart (rendered as an image) can show ฿.
+const THB  = (n) => 'THB ' + Math.round(Number(n) || 0).toLocaleString('en-US')
+const THBc = (n) => '฿' + Math.round(Number(n) || 0).toLocaleString('en-US')
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 // Palette (matches the app)
@@ -62,7 +65,7 @@ function cashFlowChartDataUrl(monthlyData, minSafeBalance, months) {
   ctx.beginPath(); ctx.moveTo(padL, yMin); ctx.lineTo(padL + plotW, yMin); ctx.stroke()
   ctx.setLineDash([])
   ctx.fillStyle = C.red; ctx.textAlign = 'left'; ctx.font = '10px Arial'
-  ctx.fillText('Min safe ' + THB(minSafeBalance), padL + 4, yMin - 4)
+  ctx.fillText('Min safe ' + THBc(minSafeBalance), padL + 4, yMin - 4)
 
   // bars: income up (green), outcome down (red)
   const slot = plotW / n
@@ -97,8 +100,8 @@ function cashFlowChartDataUrl(monthlyData, minSafeBalance, months) {
 
   // right axis labels (balance scale)
   ctx.fillStyle = C.blue; ctx.textAlign = 'left'; ctx.font = '10px Arial'
-  ctx.fillText(THB(maxBal), padL + plotW + 6, padT + 8)
-  ctx.fillText(THB(minBal), padL + plotW + 6, padT + plotH)
+  ctx.fillText(THBc(maxBal), padL + plotW + 6, padT + 8)
+  ctx.fillText(THBc(minBal), padL + plotW + 6, padT + plotH)
 
   // x labels
   ctx.fillStyle = C.sub; ctx.font = '11px Arial'; ctx.textAlign = 'center'
