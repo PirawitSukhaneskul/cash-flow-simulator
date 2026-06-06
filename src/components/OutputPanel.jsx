@@ -205,6 +205,7 @@ function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentD
   const display = data.slice(0, count).map((d, i) => ({
     ...d,
     label: d.monthLabel,
+    expensesDown: -Math.abs(d.expenses),   // expenses drawn below zero (outflow)
   }))
 
   // Cleaner chart: keep a visible vertex on every month, but show the value
@@ -212,12 +213,16 @@ function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentD
   const showVertexLabels = false
   const barSize          = count > 18 ? 7 : count > 12 ? 10 : 16
 
-  // Quarter boundary labels (start of Q2, Q3, Q4, Q5…)
-  const qBoundaryXs = display.filter((_, i) => i > 0 && i % 3 === 0).map(d => d.label)
+  // Use the unique month key (M1..Mn) for the axis; map to a display label.
+  // (Month names repeat across years, so they can't be the category key.)
+  const labelByMonth = Object.fromEntries(display.map(d => [d.month, d.monthLabel]))
+
+  // Quarter boundary lines (start of Q2, Q3, Q4, Q5…)
+  const qBoundaryXs = display.filter((_, i) => i > 0 && i % 3 === 0).map(d => d.month)
 
   // Quarter labels: Q1 at index 0, Q2 at index 3, etc.
   const qLabels = display.filter((_, i) => i % 3 === 0).map((d, qi) => ({
-    x: d.label, q: `Q${qi + 1}`,
+    x: d.month, q: `Q${qi + 1}`,
   }))
 
   const interval = count > 18 ? 2 : count > 12 ? 1 : 0
@@ -229,7 +234,7 @@ function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentD
     <div className="chart-card" style={{ gridColumn: '1 / -1' }}>
       <div className="chart-title">Cash Flow Projection</div>
       <div className="chart-subtitle">
-        Revenue bars (blue) · Expenses (pink) · Balance line
+        Income ▲ · Outcome ▼ · ● Net profit / month · — Cash balance
         {paymentDelay > 0 && <span style={{ color:'var(--amber)', fontWeight:600 }}> · ⚡ +{paymentDelay}mo payment delay</span>}
       </div>
 
@@ -242,7 +247,7 @@ function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentD
             {/* Grid — light verticals every month, stronger at quarters */}
             <CartesianGrid strokeDasharray="0" vertical={true} stroke="var(--border)" strokeOpacity={0.6} horizontal={true} />
 
-            <XAxis dataKey="label" tick={{ fontSize:10, fill:'var(--ink-4)' }} axisLine={false} tickLine={false} interval={interval} />
+            <XAxis dataKey="month" tickFormatter={m => labelByMonth[m] || m} tick={{ fontSize:10, fill:'var(--ink-4)' }} axisLine={false} tickLine={false} interval={interval} />
 
             {/* Left Y: bars */}
             <YAxis yAxisId="bars" tickFormatter={v => fmt(v)} tick={{ fontSize:10, fill:'var(--ink-4)' }} axisLine={false} tickLine={false} width={50} />
@@ -270,12 +275,27 @@ function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentD
               stroke="#e02020" strokeDasharray="5 3" strokeWidth={1.5}
               label={{ value:`Min ฿${(minSafeBalance/1000).toFixed(0)}K`, position:'insideTopRight', fontSize:9, fill:'#e02020', fontWeight:600 }} />
 
-            {/* Revenue bars */}
-            <Bar yAxisId="bars" dataKey="revenue"  name="Revenue"  fill="#2563eb" radius={[3,3,0,0]} barSize={barSize} />
-            {/* Expense bars */}
-            <Bar yAxisId="bars" dataKey="expenses" name="Expenses" fill="#fca5a5" radius={[3,3,0,0]} barSize={barSize} />
+            {/* Zero baseline for the diverging bars */}
+            <ReferenceLine yAxisId="bars" y={0} stroke="var(--border-md)" strokeWidth={1} />
 
-            {/* Balance line — single line, custom colored dots */}
+            {/* Income bars — up (green) */}
+            <Bar yAxisId="bars" dataKey="revenue"      name="Income"  fill="#1a7f4b" radius={[3,3,0,0]} barSize={barSize} />
+            {/* Outcome bars — down (red) */}
+            <Bar yAxisId="bars" dataKey="expensesDown" name="Outcome" fill="#e57373" radius={[0,0,3,3]} barSize={barSize} />
+
+            {/* Net profit / month — points on the bars axis */}
+            <Line
+              yAxisId="bars"
+              dataKey="net"
+              name="Net profit"
+              stroke="#888888"
+              strokeWidth={1.5}
+              dot={(props) => { const { key, cx, cy, payload } = props; if (cx == null || cy == null) return null; return <circle key={key} cx={cx} cy={cy} r={3} fill={payload.net >= 0 ? '#1a7f4b' : '#e02020'} stroke="white" strokeWidth={1.2} /> }}
+              activeDot={{ r:5, fill:'#555', stroke:'white', strokeWidth:2 }}
+              connectNulls
+            />
+
+            {/* Cash balance line — running position, right axis */}
             <Line
               yAxisId="line"
               dataKey="balance"
@@ -291,10 +311,10 @@ function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentD
       </div>
 
       <div className="chart-legend" style={{ marginTop:10 }}>
-        <div className="legend-item"><div className="legend-dot" style={{ background:'#2563eb' }}/><span>Revenue</span></div>
-        <div className="legend-item"><div className="legend-dot" style={{ background:'#fca5a5' }}/><span>Expenses</span></div>
-        <div className="legend-item"><div className="legend-dot" style={{ background:'#1a56db' }}/><span>Balance (safe)</span></div>
-        <div className="legend-item"><div className="legend-dot" style={{ background:'#e02020' }}/><span>Balance (risky)</span></div>
+        <div className="legend-item"><div className="legend-dot" style={{ background:'#1a7f4b' }}/><span>Income ▲</span></div>
+        <div className="legend-item"><div className="legend-dot" style={{ background:'#e57373' }}/><span>Outcome ▼</span></div>
+        <div className="legend-item"><div className="legend-dot" style={{ background:'#888888' }}/><span>Net profit / month</span></div>
+        <div className="legend-item"><div className="legend-dot" style={{ background:'#1a56db' }}/><span>Cash balance</span></div>
         <div className="legend-item"><div className="legend-dash" /><span>Min safe ({fmtFull(minSafeBalance)})</span></div>
       </div>
     </div>
@@ -359,6 +379,43 @@ function ScenarioSummary({ inputs, results }) {
   )
 }
 
+// ── Statement of Cash Flows (annual) ───────────────────────
+function StatementOfCashFlows({ inputs, results }) {
+  const begin   = inputs.initialCapital || 0
+  const receipts = results.annualRevenue || 0
+  const pays = results.expenseBreakdown || []        // Salary, Software, Office, Marketing, Tax, Other
+  const totalPay = pays.reduce((s, p) => s + p.value, 0)
+  const net = receipts - totalPay
+  const ending = begin + net
+
+  const Row = ({ label, value, indent, strong, color, top }) => (
+    <div className={`socf-row${strong ? ' strong' : ''}`} style={top ? { borderTop: '1.5px solid var(--border-md)' } : undefined}>
+      <span className="socf-label" style={{ paddingLeft: indent ? 18 : 0 }}>{label}</span>
+      <span className="socf-val" style={color ? { color } : undefined}>{value == null ? '' : fmtFull(value)}</span>
+    </div>
+  )
+
+  return (
+    <div className="card socf-card">
+      <div className="socf-head">Statement of Cash Flows</div>
+      <div className="socf-sub">Year 1 estimate · {inputs.months || 12} month projection</div>
+
+      <Row label="Beginning cash on hand" value={begin} strong />
+
+      <div className="socf-section">Add: Cash receipts</div>
+      <Row label="Design fee revenue" value={receipts} indent />
+      <Row label="Total cash receipts" value={receipts} strong top />
+
+      <div className="socf-section">Less: Cash payments</div>
+      {pays.map(p => <Row key={p.name} label={p.name} value={p.value} indent />)}
+      <Row label="Total cash payments" value={totalPay} strong top />
+
+      <Row label="Net cash flow (year)" value={net} strong top color={net >= 0 ? 'var(--green)' : 'var(--red)'} />
+      <Row label="Ending cash on hand" value={ending} strong color={ending >= 0 ? 'var(--ink)' : 'var(--red)'} />
+    </div>
+  )
+}
+
 // ── Monthly Table ──────────────────────────────────────────
 function MonthlyTable({ data, months }) {
   return (
@@ -411,6 +468,7 @@ export default function OutputPanel({ inputs, results, onSaveScenario }) {
         <ExpenseDonut data={results.expenseBreakdown} annualExpenses={results.annualExpenses} />
         <ScenarioSummary inputs={inputs} results={results} />
       </div>
+      <StatementOfCashFlows inputs={inputs} results={results} />
       <MonthlyTable data={results.monthlyData} months={inputs.months} />
 
       {/* Desktop save banner */}

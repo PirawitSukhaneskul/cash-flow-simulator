@@ -21,71 +21,94 @@ function cashFlowChartDataUrl(monthlyData, minSafeBalance, months) {
   ctx.scale(scale, scale)
   ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H)
 
-  const padL = 70, padR = 70, padT = 24, padB = 40
+  const padL = 72, padR = 72, padT = 22, padB = 38
   const plotW = W - padL - padR, plotH = H - padT - padB
   const n = data.length || 1
 
-  const maxBar = Math.max(1, ...data.map(d => Math.max(d.revenue, d.expenses)))
+  // Diverging bars: income up, expenses down, around a zero line in the middle
+  const barMax = Math.max(1, ...data.map(d => Math.max(d.revenue, Math.abs(d.expenses), Math.abs(d.net))))
+  const zeroY  = padT + plotH / 2
+  const half   = plotH / 2
+  // Balance scale (right axis)
   const balances = data.map(d => d.balance)
   const maxBal = Math.max(minSafeBalance, ...balances, 1)
   const minBal = Math.min(0, ...balances, minSafeBalance)
   const balRange = (maxBal - minBal) || 1
 
-  const xAt = (i) => padL + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW)
-  const yBar = (v) => padT + plotH - (v / maxBar) * plotH
-  const yBal = (v) => padT + plotH - ((v - minBal) / balRange) * plotH
+  const xAt   = (i) => padL + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW)
+  const yBar  = (v) => zeroY - (v / barMax) * half          // bars / net (signed)
+  const yBal  = (v) => padT + plotH - ((v - minBal) / balRange) * plotH
 
-  // grid + axes
+  // frame
   ctx.strokeStyle = C.line; ctx.lineWidth = 1
   ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + plotH); ctx.lineTo(padL + plotW, padT + plotH); ctx.stroke()
-  ctx.fillStyle = C.sub; ctx.font = '12px Arial'
-  for (let g = 0; g <= 4; g++) {
-    const y = padT + (g / 4) * plotH
-    ctx.strokeStyle = '#f0ede6'; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke()
-    const barVal = maxBar * (1 - g / 4)
-    ctx.fillStyle = C.sub; ctx.textAlign = 'right'
-    ctx.fillText('฿' + Math.round(barVal / 1000) + 'K', padL - 6, y + 4)
-  }
 
-  // min-safe dashed line
+  // left axis labels (bar scale: +max / 0 / -max)
+  ctx.font = '11px Arial'; ctx.fillStyle = C.sub; ctx.textAlign = 'right'
+  ;[1, 0.5, 0, -0.5, -1].forEach(f => {
+    const y = zeroY - f * half
+    ctx.strokeStyle = f === 0 ? C.line : '#f3f1ea'
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke()
+    ctx.fillStyle = C.sub
+    ctx.fillText((f > 0 ? '+' : '') + '฿' + Math.round(barMax * f / 1000) + 'K', padL - 6, y + 4)
+  })
+  // zero line emphasised
+  ctx.strokeStyle = '#c8c4bc'; ctx.lineWidth = 1.2
+  ctx.beginPath(); ctx.moveTo(padL, zeroY); ctx.lineTo(padL + plotW, zeroY); ctx.stroke()
+
+  // min-safe dashed line (balance scale)
   const yMin = yBal(minSafeBalance)
-  ctx.strokeStyle = C.red; ctx.setLineDash([6, 4]); ctx.lineWidth = 1.5
+  ctx.strokeStyle = C.red; ctx.setLineDash([6, 4]); ctx.lineWidth = 1.4
   ctx.beginPath(); ctx.moveTo(padL, yMin); ctx.lineTo(padL + plotW, yMin); ctx.stroke()
   ctx.setLineDash([])
-  ctx.fillStyle = C.red; ctx.textAlign = 'left'; ctx.font = '11px Arial'
-  ctx.fillText('Min safe ' + THB(minSafeBalance), padL + 4, yMin - 5)
+  ctx.fillStyle = C.red; ctx.textAlign = 'left'; ctx.font = '10px Arial'
+  ctx.fillText('Min safe ' + THB(minSafeBalance), padL + 4, yMin - 4)
 
-  // bars
+  // bars: income up (green), outcome down (red)
   const slot = plotW / n
-  const bw = Math.max(2, Math.min(14, slot * 0.32))
+  const bw = Math.max(3, Math.min(18, slot * 0.5))
   data.forEach((d, i) => {
     const cx = xAt(i)
-    ctx.fillStyle = C.blue
-    ctx.fillRect(cx - bw - 1, yBar(d.revenue), bw, padT + plotH - yBar(d.revenue))
-    ctx.fillStyle = C.pink
-    ctx.fillRect(cx + 1, yBar(d.expenses), bw, padT + plotH - yBar(d.expenses))
+    ctx.fillStyle = C.green
+    ctx.fillRect(cx - bw / 2, yBar(d.revenue), bw, zeroY - yBar(d.revenue))
+    ctx.fillStyle = '#e57373'
+    ctx.fillRect(cx - bw / 2, zeroY, bw, yBar(-Math.abs(d.expenses)) - zeroY)
   })
 
-  // balance line
-  ctx.strokeStyle = C.blue; ctx.lineWidth = 2.5; ctx.beginPath()
+  // net profit / month — points on bar scale
+  ctx.strokeStyle = '#999'; ctx.lineWidth = 1.2; ctx.beginPath()
+  data.forEach((d, i) => { const x = xAt(i), y = yBar(d.net); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y) })
+  ctx.stroke()
+  data.forEach((d, i) => {
+    const x = xAt(i), y = yBar(d.net)
+    ctx.fillStyle = d.net >= 0 ? C.green : C.red
+    ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fill()
+  })
+
+  // cash balance line (right axis)
+  ctx.strokeStyle = C.blue; ctx.lineWidth = 2.2; ctx.beginPath()
   data.forEach((d, i) => { const x = xAt(i), y = yBal(d.balance); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y) })
   ctx.stroke()
   data.forEach((d, i) => {
     const x = xAt(i), y = yBal(d.balance), risky = d.balance < minSafeBalance
     ctx.fillStyle = risky ? C.red : C.blue
-    ctx.beginPath(); ctx.arc(x, y, risky ? 4 : 3, 0, Math.PI * 2); ctx.fill()
+    ctx.beginPath(); ctx.arc(x, y, risky ? 3.6 : 2.8, 0, Math.PI * 2); ctx.fill()
   })
 
-  // x labels (every ~2 months)
+  // right axis labels (balance scale)
+  ctx.fillStyle = C.blue; ctx.textAlign = 'left'; ctx.font = '10px Arial'
+  ctx.fillText(THB(maxBal), padL + plotW + 6, padT + 8)
+  ctx.fillText(THB(minBal), padL + plotW + 6, padT + plotH)
+
+  // x labels
   ctx.fillStyle = C.sub; ctx.font = '11px Arial'; ctx.textAlign = 'center'
   const step = n > 14 ? 3 : n > 8 ? 2 : 1
   data.forEach((d, i) => {
     if (i % step !== 0) return
-    const lbl = d.monthLabel || MONTHS[i % 12]
-    ctx.fillText(lbl, xAt(i), padT + plotH + 18)
+    ctx.fillText(d.monthLabel || MONTHS[i % 12], xAt(i), padT + plotH + 16)
   })
 
-  return cv.toDataURL('image/jpeg', 0.82)
+  return cv.toDataURL('image/jpeg', 0.85)
 }
 
 // ── Risk warnings (mirrors the compare page) ───────────────
