@@ -357,6 +357,20 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+
+/* Page visit counter at the bottom of the dashboard */
+.visitor-counter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: 18px 0 90px;
+  font-size: 0.72rem;
+  color: var(--ink-4);
+}
+@media (min-width: 901px) {
+  .visitor-counter { margin: 18px 0 8px; }
+}
 .reality-card.safe     { background: var(--green-light); border-color: #bbf7d0; }
 .reality-card.warning  { background: var(--amber-light); border-color: #fde68a; }
 .reality-card.danger   { background: var(--red-light);   border-color: var(--red-mid); }

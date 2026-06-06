@@ -7,6 +7,7 @@ import {
   TrendingUp, Wallet, Users, Monitor, Receipt, BookMarked, Save,
 } from 'lucide-react'
 import { fmt, fmtFull } from '../utils/calculations'
+import VisitorCounter from './VisitorCounter'
 
 // ── Formatters ─────────────────────────────────────────────
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -82,41 +83,42 @@ function BalanceAlert({ riskyCount, firstRisky }) {
 }
 
 // ── KPI Row — 5 compact cards ──────────────────────────────
-function KPISection({ results, inputs }) {
-  const { annualRevenue, annualExpenses, annualNetProfit, annualSalary, annualSoftware } = results
+function NetProfitHero({ results, inputs }) {
+  const { annualRevenue, annualNetProfit } = results
   const isProfit = annualNetProfit >= 0
   const margin   = annualRevenue > 0 ? ((annualNetProfit / annualRevenue) * 100).toFixed(1) : null
 
   return (
-    <div>
-      {/* Hero card */}
-      <div className="kpi-hero" style={{ marginBottom:12 }}>
-        <div>
-          <div className="kpi-hero-tag">Annual Net Profit (Year 1 est.)</div>
-          <div className={`kpi-hero-value ${isProfit ? 'profit' : 'loss'}`}>{fmtFull(annualNetProfit)}</div>
-          <div className="kpi-hero-sub">{isProfit ? '▲ กำไร' : '▼ ขาดทุน'} · after {inputs.taxRate}% tax</div>
-        </div>
-        <div style={{ textAlign:'right' }}>
-          <div className="kpi-hero-margin-label">Net Margin</div>
-          <div className={`kpi-hero-margin ${isProfit ? 'profit' : 'loss'}`}>{margin != null ? `${margin}%` : '—'}</div>
-        </div>
+    <div className="kpi-hero" style={{ marginBottom:12 }}>
+      <div>
+        <div className="kpi-hero-tag">Annual Net Profit (Year 1 est.)</div>
+        <div className={`kpi-hero-value ${isProfit ? 'profit' : 'loss'}`}>{fmtFull(annualNetProfit)}</div>
+        <div className="kpi-hero-sub">{isProfit ? '▲ กำไร' : '▼ ขาดทุน'} · after {inputs.taxRate}% tax</div>
       </div>
+      <div style={{ textAlign:'right' }}>
+        <div className="kpi-hero-margin-label">Net Margin</div>
+        <div className={`kpi-hero-margin ${isProfit ? 'profit' : 'loss'}`}>{margin != null ? `${margin}%` : '—'}</div>
+      </div>
+    </div>
+  )
+}
 
-      {/* Annual Revenue + Annual Expenses on one horizontal line */}
-      <div className="kpi-pair-row">
-        {[
-          { icon: TrendingUp, label:'Annual Revenue',  value: fmtFull(annualRevenue),  color:'var(--blue)', accent:'accent-blue' },
-          { icon: Receipt,    label:'Annual Expenses', value: fmtFull(annualExpenses), color:'var(--red)',  accent:'accent-red'  },
-        ].map(({ icon: Icon, label, value, color, accent }) => (
-          <div key={label} className={`kpi-compact-card ${accent}`}>
-            <div className="kpi-compact-icon">
-              <Icon size={16} color={color} />
-            </div>
-            <div className="kpi-tag">{label}</div>
-            <div className="kpi-value" style={{ color, fontSize:'1.15rem' }}>{value}</div>
+function RevExpRow({ results }) {
+  const { annualRevenue, annualExpenses } = results
+  return (
+    <div className="kpi-pair-row">
+      {[
+        { icon: TrendingUp, label:'Annual Revenue',  value: fmtFull(annualRevenue),  color:'var(--blue)', accent:'accent-blue' },
+        { icon: Receipt,    label:'Annual Expenses', value: fmtFull(annualExpenses), color:'var(--red)',  accent:'accent-red'  },
+      ].map(({ icon: Icon, label, value, color, accent }) => (
+        <div key={label} className={`kpi-compact-card ${accent}`}>
+          <div className="kpi-compact-icon">
+            <Icon size={16} color={color} />
           </div>
-        ))}
-      </div>
+          <div className="kpi-tag">{label}</div>
+          <div className="kpi-value" style={{ color, fontSize:'1.15rem' }}>{value}</div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -391,7 +393,9 @@ function MonthlyTable({ data, months }) {
 export default function OutputPanel({ inputs, results, onGetReport, onSaveScenario }) {
   return (
     <div className="output-panel">
-      {/* 1. Cash Flow Projection graph at the very top */}
+      {/* 1. Annual Net Profit hero on top */}
+      <NetProfitHero results={results} inputs={inputs} />
+      {/* 2. Cash Flow Projection graph */}
       <ComboCashChart
         data={results.monthlyData}
         months={inputs.months}
@@ -399,8 +403,8 @@ export default function OutputPanel({ inputs, results, onGetReport, onSaveScenar
         initialCapital={inputs.initialCapital}
         paymentDelay={inputs.paymentDelay}
       />
-      {/* 2. Annual Net Profit hero + 3. Revenue & Expenses row */}
-      <KPISection results={results} inputs={inputs} />
+      {/* 3. Annual Revenue + Annual Expenses */}
+      <RevExpRow results={results} />
       {/* 4. Reality Check — 4 compact boxes */}
       <RealityCheck results={results} inputs={inputs} />
       <div className="charts-grid">
@@ -434,6 +438,9 @@ export default function OutputPanel({ inputs, results, onGetReport, onSaveScenar
           📥 Get Report
         </button>
       </div>
+
+      {/* Page visit counter — bottom of the dashboard */}
+      <VisitorCounter />
     </div>
   )
 }

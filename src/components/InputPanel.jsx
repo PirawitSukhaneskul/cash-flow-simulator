@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Minus, Trash2, PlusCircle, Check, X, Save } from 'lucide-react'
+import { Plus, Minus, Trash2, PlusCircle, Check, X, Save, Pencil } from 'lucide-react'
 import { STAFF_ROLES, TEAM_PACKS, OFFICE_DEFAULTS, MILESTONE_PRESETS, buildDefaultMilestones } from '../data/defaults'
 import { SOFTWARE_CATALOG, SOFTWARE_CATEGORY_ORDER, SOFTWARE_PACK_DEFAULTS, calcSelectedSoftwareCost } from '../data/softwareCatalog'
 import { ASA_PROJECT_TYPES, PROJECT_SIZE_PRESETS, getASAGuidelineFee } from '../data/asa'
@@ -140,17 +140,18 @@ function MilestoneEditor({ milestones, preset, duration, onChangePreset, onChang
 }
 
 // ── Add Project Modal ──────────────────────────────────────
-function AddProjectModal({ onAdd, onClose }) {
+function AddProjectModal({ onAdd, onUpdate, onClose, editProject }) {
+  const isEdit = !!editProject
   const [size,            setSize]            = useState('medium')
-  const [type,            setType]            = useState('residential')
-  const [cost,            setCost]            = useState(25_000_000)
-  const [fee,             setFee]             = useState(getASAGuidelineFee('residential', 25_000_000))
-  const [name,            setName]            = useState('')
-  const [start,           setStart]           = useState(1)
-  const [dur,             setDur]             = useState(5)
-  const [delay,           setDelay]           = useState(0)
-  const [milestonePreset, setMilestonePreset] = useState('standard4')
-  const [milestones,      setMilestones]      = useState(() => buildDefaultMilestones('standard4', 5))
+  const [type,            setType]            = useState(editProject?.type ?? 'residential')
+  const [cost,            setCost]            = useState(editProject?.constructionCost ?? 25_000_000)
+  const [fee,             setFee]             = useState(editProject?.feePercent ?? getASAGuidelineFee('residential', 25_000_000))
+  const [name,            setName]            = useState(editProject?.name ?? '')
+  const [start,           setStart]           = useState(editProject?.startMonth ?? 1)
+  const [dur,             setDur]             = useState(editProject?.duration ?? 5)
+  const [delay,           setDelay]           = useState(editProject?.paymentDelay ?? 0)
+  const [milestonePreset, setMilestonePreset] = useState(editProject?.milestonePreset ?? 'standard4')
+  const [milestones,      setMilestones]      = useState(() => editProject?.milestones ?? buildDefaultMilestones('standard4', 5))
 
   const guideline = getASAGuidelineFee(type, cost)
   const feeClass  = fee > guideline ? 'above' : fee < guideline ? 'below' : ''
@@ -191,13 +192,14 @@ function AddProjectModal({ onAdd, onClose }) {
   function handleAdd() {
     if (!msValid) return
     const proj = {
-      id: `proj_${Date.now()}`,
+      id: editProject?.id || `proj_${Date.now()}`,
       name: name || `${ASA_PROJECT_TYPES.find(t => t.id === type)?.label || 'Project'} — ฿${(cost/1_000_000).toFixed(0)}M`,
       type, constructionCost: cost, feePercent: fee,
       guidelineFeePercent: guideline, startMonth: start, duration: dur,
       paymentDelay: delay, milestonePreset, milestones,
     }
-    onAdd(proj)
+    if (isEdit) onUpdate(proj)
+    else onAdd(proj)
     onClose()
   }
 
@@ -205,7 +207,7 @@ function AddProjectModal({ onAdd, onClose }) {
     <div className="modal-overlay">
       <div className="modal-sheet" style={{ maxWidth: 540 }}>
         <div className="sheet-header">
-          <span className="sheet-title">+ Add Project</span>
+          <span className="sheet-title">{isEdit ? '✏️ Edit Project' : '+ Add Project'}</span>
           <button className="btn-icon btn-sm" onClick={onClose}><X size={16} /></button>
         </div>
 
@@ -329,7 +331,7 @@ function AddProjectModal({ onAdd, onClose }) {
           <button className="btn btn-ink" style={{ flex: 1, justifyContent: 'center' }}
             onClick={handleAdd} disabled={!msValid}
             title={!msValid ? `Total must be 100% (currently ${msTotal}%)` : undefined}>
-            <Plus size={15} /> Add Project
+            {isEdit ? <><Check size={15} /> Save Changes</> : <><Plus size={15} /> Add Project</>}
           </button>
         </div>
       </div>
@@ -430,8 +432,10 @@ function TeamTab({ inputs, update }) {
 // ── Tab: Projects ──────────────────────────────────────────
 function ProjectsTab({ inputs, update }) {
   const [showAdd, setShowAdd] = useState(false)
+  const [editProject, setEditProject] = useState(null)
 
   function removeProject(id) { update({ projects: inputs.projects.filter(p => p.id !== id) }) }
+  function updateProject(proj) { update({ projects: inputs.projects.map(p => p.id === proj.id ? proj : p) }) }
 
   const totalRevenue = inputs.projects.reduce((s, p) => s + p.constructionCost * (p.feePercent / 100), 0)
 
@@ -475,9 +479,14 @@ function ProjectsTab({ inputs, update }) {
               </div>
               <div className="project-item-controls">
                 <span className="project-item-fee">{fmt(rev)}</span>
-                <button className="btn-icon btn-sm" onClick={() => removeProject(proj.id)}>
-                  <Trash2 size={12} />
-                </button>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button className="btn-icon btn-sm" title="Edit project" onClick={() => setEditProject(proj)}>
+                    <Pencil size={12} />
+                  </button>
+                  <button className="btn-icon btn-sm" title="Delete project" onClick={() => removeProject(proj.id)}>
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               </div>
             </div>
           )
@@ -517,6 +526,7 @@ function ProjectsTab({ inputs, update }) {
       </div>
 
       {showAdd && <AddProjectModal onAdd={proj => update({ projects: [...inputs.projects, proj] })} onClose={() => setShowAdd(false)} />}
+      {editProject && <AddProjectModal editProject={editProject} onUpdate={updateProject} onClose={() => setEditProject(null)} />}
     </div>
   )
 }

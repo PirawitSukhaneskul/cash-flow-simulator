@@ -57,8 +57,19 @@ function doPost(e) {
   }
 }
 
-// ── Entry point: GET (health check) ───────────────────────
-function doGet() {
+// ── Entry point: GET (health check + visit counter) ───────
+function doGet(e) {
+  const action = (e && e.parameter) ? e.parameter.action : null
+  if (action === 'visit') {
+    const props = PropertiesService.getScriptProperties()
+    const n = (parseInt(props.getProperty('VISITS') || '0', 10) || 0) + 1
+    props.setProperty('VISITS', String(n))
+    return jsonOut({ count: n })
+  }
+  if (action === 'count') {
+    const n = parseInt(PropertiesService.getScriptProperties().getProperty('VISITS') || '0', 10) || 0
+    return jsonOut({ count: n })
+  }
   return jsonOut({ status: 'ok', app: CONFIG.APP_NAME })
 }
 

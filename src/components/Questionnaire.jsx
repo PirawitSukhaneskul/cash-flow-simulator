@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import { FileSpreadsheet, X, Send } from 'lucide-react'
 
+import { GAS_URL } from '../config'
+
 const TOTAL_STEPS = 4
-// Live Google Apps Script web app — logs each submission to a Google Sheet and
-// emails the report. This endpoint is public by design (anyone-access web app),
-// so it's safe to ship in the client bundle; set VITE_GAS_URL to override locally.
-const GAS_URL = import.meta.env.VITE_GAS_URL || 'https://script.google.com/macros/s/AKfycbyK1xlRi3u0sJPlvcNTndEv7qXMyrQ19QEvWBvhGtE2ahHoY5aaxsiHNOwOHM8frvhAqA/exec'
 
 async function postToGAS(payload) {
   if (!GAS_URL) {
