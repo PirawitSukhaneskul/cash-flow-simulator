@@ -230,6 +230,20 @@ function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentD
   const riskyCount = display.filter(d => d.balance < minSafeBalance).length
   const firstRisky = display.find(d => d.balance < minSafeBalance) || null
 
+  // ── Align both Y axes at ฿0 ───────────────────────────────
+  // Bars (monthly flows) diverge around 0; balance (cumulative) is on the right
+  // axis. We line up the two zero points so the positive min-safe line sits
+  // clearly above a single shared zero baseline instead of in the bars' negatives.
+  const posMax = Math.max(1, ...display.map(d => Math.max(d.revenue, d.net, 0)))
+  const negMin = Math.min(0, ...display.map(d => Math.min(d.expensesDown, d.net, 0)))
+  const barsTop = posMax * 1.12
+  const barsBot = negMin * 1.12
+  const belowFrac = barsTop === barsBot ? 0 : (0 - barsBot) / (barsTop - barsBot) // share of axis below zero
+  const balMax = Math.max(minSafeBalance, ...display.map(d => d.balance)) * 1.12
+  const balMin = belowFrac <= 0 ? 0 : belowFrac >= 1 ? -balMax : (belowFrac * balMax) / (belowFrac - 1)
+  const barsDomain = [barsBot, barsTop]
+  const lineDomain = [balMin, balMax]
+
   return (
     <div className="chart-card" style={{ gridColumn: '1 / -1' }}>
       <div className="chart-title">Cash Flow Projection</div>
@@ -249,10 +263,10 @@ function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentD
 
             <XAxis dataKey="month" tickFormatter={m => labelByMonth[m] || m} tick={{ fontSize:10, fill:'var(--ink-4)' }} axisLine={false} tickLine={false} interval={interval} />
 
-            {/* Left Y: bars */}
-            <YAxis yAxisId="bars" tickFormatter={v => fmt(v)} tick={{ fontSize:10, fill:'var(--ink-4)' }} axisLine={false} tickLine={false} width={50} />
-            {/* Right Y: balance */}
-            <YAxis yAxisId="line" orientation="right" tickFormatter={v => fmt(v)} tick={{ fontSize:10, fill:'var(--ink-4)' }} axisLine={false} tickLine={false} width={54} />
+            {/* Left Y: bars (monthly flows) — zero-aligned with balance axis */}
+            <YAxis yAxisId="bars" domain={barsDomain} tickFormatter={v => fmt(v)} tick={{ fontSize:10, fill:'var(--ink-4)' }} axisLine={false} tickLine={false} width={50} />
+            {/* Right Y: balance — zero-aligned with bars axis */}
+            <YAxis yAxisId="line" orientation="right" domain={lineDomain} tickFormatter={v => fmt(v)} tick={{ fontSize:10, fill:'var(--ink-4)' }} axisLine={false} tickLine={false} width={54} />
 
             <Tooltip content={<CashTooltip minSafeBalance={minSafeBalance} />} />
 
@@ -267,8 +281,8 @@ function ComboCashChart({ data, months, minSafeBalance, initialCapital, paymentD
                 label={{ value: q, position: 'top', fill:'#94a3b8', fontSize:9, fontWeight:700 }} />
             ))}
 
-            {/* Danger zone shading below min safe balance */}
-            <ReferenceArea yAxisId="line" y1={0} y2={minSafeBalance} fill="#fef2f2" fillOpacity={0.45} stroke="none" />
+            {/* Danger zone: anything below the min-safe balance line */}
+            <ReferenceArea yAxisId="line" y1={lineDomain[0]} y2={minSafeBalance} fill="#fef2f2" fillOpacity={0.5} stroke="none" />
 
             {/* Dashed red min safe line */}
             <ReferenceLine yAxisId="line" y={minSafeBalance}

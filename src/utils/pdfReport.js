@@ -32,15 +32,14 @@ function cashFlowChartDataUrl(monthlyData, minSafeBalance, months) {
   const barMax = Math.max(1, ...data.map(d => Math.max(d.revenue, Math.abs(d.expenses), Math.abs(d.net))))
   const zeroY  = padT + plotH / 2
   const half   = plotH / 2
-  // Balance scale (right axis)
+  // Balance scale (right axis) — zero-aligned with the bars' zero line so the
+  // positive min-safe line sits above the shared zero baseline.
   const balances = data.map(d => d.balance)
-  const maxBal = Math.max(minSafeBalance, ...balances, 1)
-  const minBal = Math.min(0, ...balances, minSafeBalance)
-  const balRange = (maxBal - minBal) || 1
+  const balTop = Math.max(minSafeBalance, ...balances, 1) * 1.12
 
   const xAt   = (i) => padL + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW)
   const yBar  = (v) => zeroY - (v / barMax) * half          // bars / net (signed)
-  const yBal  = (v) => padT + plotH - ((v - minBal) / balRange) * plotH
+  const yBal  = (v) => zeroY - (v / balTop) * half          // balance: 0 -> zeroY
 
   // frame
   ctx.strokeStyle = C.line; ctx.lineWidth = 1
@@ -98,10 +97,11 @@ function cashFlowChartDataUrl(monthlyData, minSafeBalance, months) {
     ctx.beginPath(); ctx.arc(x, y, risky ? 3.6 : 2.8, 0, Math.PI * 2); ctx.fill()
   })
 
-  // right axis labels (balance scale)
+  // right axis labels (balance scale): top = max, middle = ฿0 (shared zero)
   ctx.fillStyle = C.blue; ctx.textAlign = 'left'; ctx.font = '10px Arial'
-  ctx.fillText(THBc(maxBal), padL + plotW + 6, padT + 8)
-  ctx.fillText(THBc(minBal), padL + plotW + 6, padT + plotH)
+  ctx.fillText(THBc(balTop), padL + plotW + 6, padT + 8)
+  ctx.fillStyle = C.sub
+  ctx.fillText('฿0', padL + plotW + 6, zeroY + 4)
 
   // x labels
   ctx.fillStyle = C.sub; ctx.font = '11px Arial'; ctx.textAlign = 'center'
