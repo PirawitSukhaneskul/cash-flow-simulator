@@ -8,7 +8,7 @@ export default function EmailGate({ onSubmit, onSkip }) {
   function handleSubmit(e) {
     e.preventDefault()
     if (!email.includes('@') || !email.includes('.')) {
-      setError('กรุณากรอก email ที่ถูกต้อง')
+      setError('Please enter a valid email')
       return
     }
     onSubmit(email)
@@ -21,10 +21,10 @@ export default function EmailGate({ onSubmit, onSkip }) {
           <Mail size={24} color="#16a34a" />
         </div>
 
-        <h2 className="modal-title">ก่อนเริ่มจำลอง</h2>
+        <h2 className="modal-title">Before you start</h2>
         <p className="modal-desc">
-          กรอก email เพื่อรับ Excel report หลังจากจำลองเสร็จ
-          และเพื่อบันทึกผลการคำนวณของคุณ
+          Enter your email to receive the report after the simulation
+          and to save your results.
         </p>
 
         <div className="privacy-notice">
@@ -51,7 +51,7 @@ export default function EmailGate({ onSubmit, onSkip }) {
           <div className="modal-footer" style={{ flexDirection: 'column', gap: 8 }}>
             <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center' }}>
               <ArrowRight size={16} />
-              เริ่มจำลอง
+              Start simulation
             </button>
             <button
               type="button"
@@ -59,7 +59,7 @@ export default function EmailGate({ onSubmit, onSkip }) {
               style={{ width: '100%', justifyContent: 'center', color: 'var(--text-3)' }}
               onClick={onSkip}
             >
-              ข้ามก่อน (ไม่รับ report)
+              Skip for now (no report)
             </button>
           </div>
         </form>

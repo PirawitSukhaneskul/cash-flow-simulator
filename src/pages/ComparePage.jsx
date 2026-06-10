@@ -14,22 +14,22 @@ function generateWarnings(scenario) {
   const { results, inputs } = scenario
   const staffPct = Number(results.staffCostPct)
 
-  if (staffPct > 70) warnings.push({ type: 'red', title: 'Salary very high', desc: 'ค่าพนักงานเกิน 70% ของค่าใช้จ่ายทั้งหมด — cash pressure สูงมาก โอกาส turnover มีผลกระทบรุนแรง' })
-  else if (staffPct < 30) warnings.push({ type: 'amber', title: 'Salary very low', desc: 'ค่าพนักงานต่ำกว่า 30% — อาจมีปัญหา quality และ retention ระยะยาว' })
+  if (staffPct > 70) warnings.push({ type: 'red', title: 'Salary very high', desc: 'Staff cost exceeds 70% of total expenses — very high cash pressure; turnover would hit hard.' })
+  else if (staffPct < 30) warnings.push({ type: 'amber', title: 'Salary very low', desc: 'Staff cost below 30% — possible quality and long-term retention issues.' })
 
   const avgFee = inputs.projects.length > 0
     ? inputs.projects.reduce((s, p) => s + p.feePercent, 0) / inputs.projects.length : 0
   const avgGuideline = inputs.projects.length > 0
     ? inputs.projects.reduce((s, p) => s + p.guidelineFeePercent, 0) / inputs.projects.length : 0
 
-  if (avgFee > avgGuideline + 1.5) warnings.push({ type: 'green', title: 'Design fee above guideline', desc: `Avg fee ${avgFee.toFixed(1)}% เกิน ASA guideline ${avgGuideline.toFixed(1)}% — margin ดี แต่อาจ win rate ต่ำลง` })
-  if (avgFee < avgGuideline - 1) warnings.push({ type: 'red', title: 'Design fee below guideline', desc: `Avg fee ${avgFee.toFixed(1)}% ต่ำกว่า ASA guideline ${avgGuideline.toFixed(1)}% — win rate สูง แต่ margin และ delivery safety ต่ำ` })
+  if (avgFee > avgGuideline + 1.5) warnings.push({ type: 'green', title: 'Design fee above guideline', desc: `Avg fee ${avgFee.toFixed(1)}% above ASA guideline ${avgGuideline.toFixed(1)}% — good margin but win rate may drop.` })
+  if (avgFee < avgGuideline - 1) warnings.push({ type: 'red', title: 'Design fee below guideline', desc: `Avg fee ${avgFee.toFixed(1)}% below ASA guideline ${avgGuideline.toFixed(1)}% — higher win rate but thin margin and delivery safety.` })
 
-  if (inputs.paymentDelay > 0) warnings.push({ type: 'amber', title: 'Payment delay risk', desc: `Worst Case: ลูกค้าจ่ายช้า ${inputs.paymentDelay} เดือน — กำไรรวมปีอาจดี แต่อาจขาดสภาพคล่องรายเดือน` })
+  if (inputs.paymentDelay > 0) warnings.push({ type: 'amber', title: 'Payment delay risk', desc: `Worst case: clients pay ${inputs.paymentDelay} month(s) late — annual profit may look fine but monthly liquidity can suffer.` })
 
-  if (results.riskyCount > 3) warnings.push({ type: 'red', title: `${results.riskyCount} risky cash months`, desc: 'Cash ต่ำกว่า minimum safe balance หลายเดือน — พิจารณาเพิ่มทุนตั้งต้นหรือ credit line' })
+  if (results.riskyCount > 3) warnings.push({ type: 'red', title: `${results.riskyCount} risky cash months`, desc: 'Cash below the minimum safe balance for several months — consider more starting capital or a credit line.' })
 
-  if (!results.breakEvenMonth) warnings.push({ type: 'red', title: 'No break-even within simulation', desc: 'Balance ไม่กลับมาเท่าทุนภายในช่วงที่จำลอง — ทบทวน revenue หรือ cost structure' })
+  if (!results.breakEvenMonth) warnings.push({ type: 'red', title: 'No break-even within simulation', desc: 'Balance does not return to break-even within the simulated period — review revenue or cost structure.' })
 
   return warnings
 }
@@ -216,7 +216,7 @@ function BestScenario({ scenarios }) {
         <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Best Scenario</div>
         <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#4ade80' }}>{best.name}</div>
         <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>
-          Net profit: {fmtFull(best.results.annualNetProfit)} — ดีกว่า worst case {fmt(diff)}
+          Net profit: {fmtFull(best.results.annualNetProfit)} — better than worst case by {fmt(diff)}
         </div>
       </div>
       <div style={{ textAlign: 'right' }}>

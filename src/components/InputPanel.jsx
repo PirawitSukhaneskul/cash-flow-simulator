@@ -237,7 +237,7 @@ function AddProjectModal({ onAdd, onUpdate, onClose, editProject, simStartDate =
             <button key={t.id} className={`type-card ${type === t.id ? 'selected' : ''}`} onClick={() => pickType(t.id)}>
               <span className="tc-icon">{t.emoji}</span>
               <span>{t.label}</span>
-              <span className="tc-sub">{t.labelTH}</span>
+              <span className="tc-sub">{t.description}</span>
             </button>
           ))}
         </div>
@@ -274,8 +274,8 @@ function AddProjectModal({ onAdd, onUpdate, onClose, editProject, simStartDate =
             <span className="slider-value">{fee.toFixed(2)}%</span>
             <span>15%</span>
           </div>
-          {feeClass === 'above' && <div className="input-hint below-avg">✅ เกิน ASA guideline — margin ดีกว่าค่าอ้างอิง</div>}
-          {feeClass === 'below' && <div className="input-hint above-avg">⚠️ ต่ำกว่า ASA guideline — ตรวจสอบ scope ก่อน</div>}
+          {feeClass === 'above' && <div className="input-hint below-avg">✅ Above ASA guideline — better margin than reference</div>}
+          {feeClass === 'below' && <div className="input-hint above-avg">⚠️ Below ASA guideline — check scope first</div>}
           <div className="asa-note">
             Fee % based on ASA-style guideline. Verify before commercial use.{' '}
             <a href="https://asa.or.th/" target="_blank" rel="noopener noreferrer">asa.or.th</a> ·{' '}
@@ -404,13 +404,13 @@ function TeamTab({ inputs, update }) {
 
       {showAdd ? (
         <div style={{ border: '1.5px dashed var(--border)', borderRadius: 'var(--r-md)', padding: 10, marginTop: 6 }}>
-          <div className="section-title" style={{ marginBottom: 8 }}>เพิ่ม Role</div>
+          <div className="section-title" style={{ marginBottom: 8 }}>Add Role</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
             {STAFF_ROLES.filter(r => !inputs.team.find(t => t.role === r.role)).map(r => (
               <button key={r.role} className="pill" style={{ fontSize: '0.72rem' }} onClick={() => addRole(r)}>{r.role}</button>
             ))}
           </div>
-          <button className="btn btn-ghost btn-sm" style={{ marginTop: 8 }} onClick={() => setShowAdd(false)}>ยกเลิก</button>
+          <button className="btn btn-ghost btn-sm" style={{ marginTop: 8 }} onClick={() => setShowAdd(false)}>Cancel</button>
         </div>
       ) : (
         <button className="btn btn-ghost btn-sm w-full" style={{ marginTop: 8, justifyContent: 'center' }} onClick={() => setShowAdd(true)}>
@@ -524,7 +524,7 @@ function ProjectsTab({ inputs, update }) {
           </div>
         </div>
 
-        <AvgField label="Initial Capital / เงินกู้เริ่มต้น" avg={1_500_000} value={inputs.initialCapital}
+        <AvgField label="Initial Capital / starting funds" avg={1_500_000} value={inputs.initialCapital}
           onChange={v => update({ initialCapital: v })} suffix="" />
         <input type="range" min={500_000} max={10_000_000} step={100_000} value={inputs.initialCapital}
           onChange={e => update({ initialCapital: Number(e.target.value) })} />

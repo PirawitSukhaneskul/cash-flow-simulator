@@ -93,7 +93,7 @@ function NetProfitHero({ results, inputs }) {
       <div>
         <div className="kpi-hero-tag">Annual Net Profit (Year 1 est.)</div>
         <div className={`kpi-hero-value ${isProfit ? 'profit' : 'loss'}`}>{fmtFull(annualNetProfit)}</div>
-        <div className="kpi-hero-sub">{isProfit ? '▲ กำไร' : '▼ ขาดทุน'} · after {inputs.taxRate}% tax</div>
+        <div className="kpi-hero-sub">{isProfit ? '▲ Profit' : '▼ Loss'} · after {inputs.taxRate}% tax</div>
       </div>
       <div style={{ textAlign:'right' }}>
         <div className="kpi-hero-margin-label">Net Margin</div>
@@ -133,12 +133,12 @@ function RealityCheck({ results, inputs }) {
   const delay    = inputs.paymentDelay || 0
 
   const cashSafety = runway
-    ? { value: 'At risk',          desc: `Cash ติดลบ Month ${runway}`,   type: 'danger' }
+    ? { value: 'At risk',          desc: `Cash negative in month ${runway}`, type: 'danger' }
     : riskyCount === 0
-    ? { value: 'Safe',             desc: 'สูงกว่า min safe ตลอดช่วง',     type: 'safe' }
+    ? { value: 'Safe',             desc: 'Stays above min safe',          type: 'safe' }
     : riskyCount <= 2
-    ? { value: `${riskyCount} mo low`, desc: 'ต่ำกว่า min safe บางเดือน', type: 'warning' }
-    : { value: `${riskyCount} mo low`, desc: 'ต่ำกว่า min safe หลายเดือน', type: 'danger' }
+    ? { value: `${riskyCount} mo low`, desc: 'Below min safe some months', type: 'warning' }
+    : { value: `${riskyCount} mo low`, desc: 'Below min safe several months', type: 'danger' }
 
   const feeLevel = avgFee > avgGuide + 0.25
     ? { value: 'Above guideline', desc: `${avgFee.toFixed(1)}% vs ASA ${avgGuide.toFixed(1)}%`, type: 'safe' }
@@ -147,14 +147,14 @@ function RealityCheck({ results, inputs }) {
     : { value: 'On guideline',    desc: `${avgFee.toFixed(1)}% ≈ ASA ${avgGuide.toFixed(1)}%`, type: 'safe' }
 
   const salaryLevel = staffPct > 60
-    ? { value: `${staffPct}% high`, desc: 'ค่าพนักงานสูงเกินเกณฑ์', type: 'danger' }
+    ? { value: `${staffPct}% high`, desc: 'Staff cost above norm', type: 'danger' }
     : staffPct < 30
-    ? { value: `${staffPct}% low`,  desc: 'ค่าพนักงานต่ำผิดปกติ',   type: 'warning' }
-    : { value: `${staffPct}% ok`,   desc: 'อยู่ในเกณฑ์ที่ดี',       type: 'safe' }
+    ? { value: `${staffPct}% low`,  desc: 'Staff cost unusually low', type: 'warning' }
+    : { value: `${staffPct}% ok`,   desc: 'Within healthy range',  type: 'safe' }
 
   const delayRisk = delay === 0
-    ? { value: 'None',       desc: 'ลูกค้าจ่ายตรงเวลา',  type: 'safe' }
-    : { value: `+${delay} mo`, desc: 'Worst case จ่ายช้า', type: delay >= 2 ? 'danger' : 'warning' }
+    ? { value: 'None',       desc: 'Clients pay on time',     type: 'safe' }
+    : { value: `+${delay} mo`, desc: 'Worst case: late payment', type: delay >= 2 ? 'danger' : 'warning' }
 
   const boxes = [
     { icon: '💧', label: 'Cash Safety',         ...cashSafety },
@@ -374,7 +374,7 @@ function ScenarioSummary({ inputs, results }) {
       {[
         { label:'Projects',      value:`${inputs.projects.length} projects` },
         { label:'Revenue est.',  value:fmtFull(results.annualRevenue) },
-        { label:'Team Size',     value:`${inputs.team.reduce((s,r)=>s+r.count,0)} คน` },
+        { label:'Team Size',     value:`${inputs.team.reduce((s,r)=>s+r.count,0)} people` },
         { label:'Monthly Fixed', value:fmtFull(results.monthlyFixed) },
         { label:'Initial Capital',value:fmtFull(inputs.initialCapital) },
         { label:'Min Safe Bal.', value:fmtFull(results.minSafeBalance) },
@@ -488,7 +488,7 @@ export default function OutputPanel({ inputs, results, onSaveScenario }) {
       {/* Desktop save banner */}
       <div className="download-banner desktop-only">
         <div>
-          <h3>บันทึก Scenario นี้</h3>
+          <h3>Save this scenario</h3>
           <p>Save to compare scenarios &amp; download the PDF report on the Compare page</p>
         </div>
         <button className="btn btn-blue btn-lg" onClick={onSaveScenario}>

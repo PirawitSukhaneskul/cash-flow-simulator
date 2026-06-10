@@ -55,7 +55,7 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
 
   async function handleNext() {
     if (step === 1 && (!answers.email.includes('@') || !answers.email.includes('.'))) {
-      setEmailError('กรุณากรอก email ที่ถูกต้อง'); return
+      setEmailError('Please enter a valid email'); return
     }
     if (step < TOTAL_STEPS) { setStep(s => s + 1); return }
 
@@ -135,7 +135,7 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
       onSubmit(answers)
     } else {
       setStatus('error')
-      setErrMsg(result.error || 'ไม่สามารถส่งได้ กรุณาลองอีกครั้ง')
+      setErrMsg(result.error || 'Could not send. Please try again.')
     }
   }
 
@@ -145,12 +145,12 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
       <div className="modal-overlay">
         <div className="modal" style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '3rem', marginBottom: 16 }}>✅</div>
-          <h2 className="modal-title">Report ส่งแล้ว!</h2>
+          <h2 className="modal-title">Report sent!</h2>
           <p className="modal-desc">
-            รายงาน Cash Flow ส่งไปที่ <strong>{answers.email}</strong> แล้ว<br />
-            ตรวจสอบ inbox (อาจอยู่ใน Spam)
+            Your cash flow report has been sent to <strong>{answers.email}</strong>.<br />
+            Check your inbox (it may be in Spam).
           </p>
-          <button className="btn btn-ink btn-full btn-lg" onClick={onClose}>ปิด</button>
+          <button className="btn btn-ink btn-full btn-lg" onClick={onClose}>Close</button>
         </div>
       </div>
     )
@@ -162,11 +162,11 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
       <div className="modal-overlay">
         <div className="modal" style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '3rem', marginBottom: 16 }}>❌</div>
-          <h2 className="modal-title">ส่งไม่สำเร็จ</h2>
+          <h2 className="modal-title">Send failed</h2>
           <p className="modal-desc">{errMsg}</p>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStatus('idle')}>ลองอีกครั้ง</button>
-            <button className="btn btn-ink"   style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>ปิด</button>
+            <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStatus('idle')}>Try again</button>
+            <button className="btn btn-ink"   style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>Close</button>
           </div>
         </div>
       </div>
@@ -179,8 +179,8 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
       <div className="modal-overlay">
         <div className="modal" style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '3rem', marginBottom: 16 }}>⏳</div>
-          <h2 className="modal-title">กำลังส่ง Report…</h2>
-          <p className="modal-desc">บันทึกข้อมูลและส่ง email ไปที่ {answers.email}</p>
+          <h2 className="modal-title">Sending report…</h2>
+          <p className="modal-desc">Saving your data and emailing {answers.email}</p>
         </div>
       </div>
     )
@@ -210,8 +210,8 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
 
         {/* Step 1 — Email */}
         {step === 1 && <>
-          <h2 className="modal-title">รับ PDF Report</h2>
-          <p className="modal-desc">กรอก email เพื่อรับรายงาน PDF — เปรียบเทียบทุก scenario พร้อมกราฟ cash flow</p>
+          <h2 className="modal-title">Get PDF Report</h2>
+          <p className="modal-desc">Enter your email to receive the PDF report — every scenario compared, with cash flow charts.</p>
           <div className="privacy-notice">
             🔒 <strong>Privacy:</strong> By submitting, you agree that your simulation inputs and
             email may be saved for research and product improvement. We do not sell your data.
@@ -227,9 +227,9 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
 
         {/* Step 2 — Experience */}
         {step === 2 && <>
-          <h2 className="modal-title">ประสบการณ์ในวงการ</h2>
-          <p className="modal-desc">คุณทำงานในสายออกแบบ / สถาปัตย์มานานเท่าไร?</p>
-          {['ยังไม่มีประสบการณ์','1–3 ปี','3–7 ปี','7–15 ปี','15 ปีขึ้นไป'].map(opt => (
+          <h2 className="modal-title">Industry experience</h2>
+          <p className="modal-desc">How long have you worked in design / architecture?</p>
+          {['No experience yet','1–3 years','3–7 years','7–15 years','15+ years'].map(opt => (
             <button key={opt} className={`btn ${answers.experience === opt ? 'btn-ink' : 'btn-ghost'}`}
               style={{ width: '100%', justifyContent: 'flex-start', borderRadius: 'var(--r-md)', marginBottom: 6 }}
               onClick={() => setAnswers(a => ({ ...a, experience: opt }))}>
@@ -240,14 +240,14 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
 
         {/* Step 3 — Business status */}
         {step === 3 && <>
-          <h2 className="modal-title">สถานะธุรกิจ</h2>
-          <p className="modal-desc">ตอนนี้คุณอยู่ในสถานการณ์ไหน?</p>
+          <h2 className="modal-title">Business status</h2>
+          <p className="modal-desc">Which best describes you right now?</p>
           {[
-            { val:'owner',    label:'เป็นเจ้าของบริษัทอยู่แล้ว' },
-            { val:'employee', label:'ทำงานในบริษัทสายนี้' },
-            { val:'planning', label:'กำลังวางแผนจะเปิด' },
-            { val:'student',  label:'นักศึกษา / เรียนอยู่' },
-            { val:'other',    label:'อื่นๆ' },
+            { val:'owner',    label:'I already own a firm' },
+            { val:'employee', label:'I work at a firm in this field' },
+            { val:'planning', label:'Planning to start one' },
+            { val:'student',  label:'Student / studying' },
+            { val:'other',    label:'Other' },
           ].map(({ val, label }) => (
             <button key={val} className={`btn ${answers.hasBusiness === val ? 'btn-ink' : 'btn-ghost'}`}
               style={{ width: '100%', justifyContent: 'flex-start', borderRadius: 'var(--r-md)', marginBottom: 6 }}
@@ -259,8 +259,8 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
 
         {/* Step 4 — Rating */}
         {step === 4 && <>
-          <h2 className="modal-title">ให้คะแนน App นี้</h2>
-          <p className="modal-desc">ช่วย feedback สั้นๆ เพื่อพัฒนาต่อ</p>
+          <h2 className="modal-title">Rate this app</h2>
+          <p className="modal-desc">A short bit of feedback to help us improve</p>
           <div className="star-rating">
             {[1,2,3,4,5].map(n => (
               <button key={n} className={`star-btn ${n <= answers.rating ? 'active' : ''}`}
@@ -268,8 +268,8 @@ export default function Questionnaire({ onSubmit, onClose, inputs, results, scen
             ))}
           </div>
           <div className="input-group">
-            <label style={{ fontSize: '0.82rem', fontWeight: 500, display: 'block', marginBottom: 6 }}>เหตุผล / ความคิดเห็น</label>
-            <textarea className="field" placeholder="บอกเหตุผลสั้นๆ..." rows={3} style={{ resize: 'vertical' }}
+            <label style={{ fontSize: '0.82rem', fontWeight: 500, display: 'block', marginBottom: 6 }}>Reason / comments</label>
+            <textarea className="field" placeholder="Tell us briefly..." rows={3} style={{ resize: 'vertical' }}
               value={answers.reason} onChange={e => setAnswers(a => ({ ...a, reason: e.target.value }))} />
           </div>
           {!GAS_URL && (

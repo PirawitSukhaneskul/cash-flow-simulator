@@ -306,7 +306,7 @@ export default function AdminPage() {
   function handleSubmit(e) {
     e.preventDefault()
     if (code === PASSCODE) setUnlocked(true)
-    else { setError('รหัสไม่ถูกต้อง — ลองอีกครั้ง'); setCode('') }
+    else { setError('Incorrect passcode — try again'); setCode('') }
   }
 
   if (unlocked) return <AdminDashboard />
@@ -316,7 +316,7 @@ export default function AdminPage() {
       <div className="passcode-card">
         <div className="passcode-icon"><Shield size={24} color="var(--ink-3)" /></div>
         <h2 style={{ marginBottom: 8 }}>Admin Access</h2>
-        <p style={{ fontSize: '0.875rem' }}>กรอกรหัสผ่านเพื่อเข้าสู่ admin dashboard</p>
+        <p style={{ fontSize: '0.875rem' }}>Enter the passcode to access the admin dashboard</p>
         <form onSubmit={handleSubmit}>
           <input
             type="password"
@@ -328,7 +328,7 @@ export default function AdminPage() {
           />
           {error && <div className="passcode-error">{error}</div>}
           <button type="submit" className="btn btn-blue" style={{ width: '100%', justifyContent: 'center', padding: '10px' }}>
-            เข้าสู่ระบบ
+            Enter
           </button>
         </form>
         <p style={{ marginTop: 16, fontSize: '0.75rem', color: 'var(--ink-4)' }}>

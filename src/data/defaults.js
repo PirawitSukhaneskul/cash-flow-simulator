@@ -56,7 +56,7 @@ export const STAFF_ROLES = [
 // ── Team presets ───────────────────────────────────────────
 export const TEAM_PACKS = {
   pack3: {
-    label: '3 คน',
+    label: '3 staff',
     team: [
       { role: 'Senior Architect', count: 1, salary: 50000 },
       { role: 'Architect',        count: 1, salary: 30000 },
@@ -64,7 +64,7 @@ export const TEAM_PACKS = {
     ],
   },
   pack6: {
-    label: '6 คน',
+    label: '6 staff',
     team: [
       { role: 'Principal / Partner',   count: 1, salary: 110000 },
       { role: 'Senior Architect',     count: 1, salary: 50000 },
@@ -74,7 +74,7 @@ export const TEAM_PACKS = {
     ],
   },
   pack9: {
-    label: '9 คน',
+    label: '9 staff',
     team: [
       { role: 'Principal / Partner',   count: 1, salary: 110000 },
       { role: 'Senior Architect',     count: 1, salary: 50000 },
@@ -90,13 +90,13 @@ export const TEAM_PACKS = {
 
 // ── Office overhead defaults ───────────────────────────────
 export const OFFICE_DEFAULTS = {
-  rent:        { avg: 45000, label: 'ค่าเช่า Office (กทม.)' },
-  utilities:   { avg: 8000,  label: 'ค่าไฟ + น้ำ + Internet' },
-  marketing:   { avg: 3000,  label: 'ค่าการตลาด / เว็บ' },
-  equipment:   { avg: 5000,  label: 'เครื่องมือ / อุปกรณ์' },
-  outsourcing: { avg: 10000, label: 'ค่า Outsource' },
-  accounting:  { avg: 5000,  label: 'บัญชี / กฎหมาย' },
-  other:       { avg: 3000,  label: 'อื่นๆ' },
+  rent:        { avg: 45000, label: 'Office rent' },
+  utilities:   { avg: 8000,  label: 'Utilities + internet' },
+  marketing:   { avg: 3000,  label: 'Marketing / web' },
+  equipment:   { avg: 5000,  label: 'Equipment / tools' },
+  outsourcing: { avg: 10000, label: 'Outsourcing' },
+  accounting:  { avg: 5000,  label: 'Accounting / legal' },
+  other:       { avg: 3000,  label: 'Other' },
 }
 
 // ── Default software selection ─────────────────────────────
